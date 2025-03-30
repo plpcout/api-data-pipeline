@@ -172,3 +172,43 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Added additional ignores for common IDEs and tools
+.idea/
+.vscode/
+*.iml
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore additional Python-related files
+*.pyo
+*.pyd
+*.whl
+
+# Ignore test coverage and profiling data
+*.prof
+*.profraw
+*.lcov
+
+# Ignore build artifacts
+*.o
+*.obj
+*.dll
+*.exe
+*.out
+*.app
+*.dSYM
+*.stackdump
+
+# Ignore archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
