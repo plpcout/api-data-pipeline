@@ -1,73 +1,75 @@
-from typing import Any
-from datetime import datetime
+import os
+from calendar import monthrange
 
 import dlt
-from dlt.common.pendulum import pendulum
-from dlt.sources.rest_api import rest_api_resources
+from dlt.destinations import filesystem
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
+from dotenv import load_dotenv
 
-# API Configuration
-BASE_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
-QUERY_ENDPOINT = "query"
+load_dotenv()
 
-@dlt.resource(name="earthquakes", write_disposition="append")
-def usgs_earthquake_source(
-    start_time: datetime | pendulum.DateTime | None = None,
-    end_time: datetime | pendulum.DateTime | None = None,
-    min_magnitude: float = 0.0,
-) -> Any:
-    """Create a REST API source for the USGS Earthquake API with improved pagination."""
-    # Set default time range if not provided
-    end_time = end_time or pendulum.now()
-    start_time = start_time or end_time.subtract(hours=1)
+# Define the base URL of the API, ENDPOINT, and STARTING_PAGE
+API_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
+METHOD = "query"
+BASE_URL = f"{API_URL}/{METHOD}"
 
-    # Initialize REST client with better pagination support
+# Testing parameters for the pipeline
+years = ["2021","2022", "2023", "2024"]  # Example years
+months = range(1, 13)  # Months from 1 to 12
+
+
+@dlt.resource(name="earthquakes", write_disposition="replace")
+def us_earthquakes(starttime, endtime):
     client = RESTClient(
         base_url=BASE_URL,
-        paginator=OffsetPaginator(
-            limit=20000,
-            offset=1,
-            total_path=None
-        )
+        paginator=OffsetPaginator(limit=20000, offset=1, total_path=None),
     )
-
     params = {
         "format": "geojson",
-        "starttime": start_time.isoformat(),
-        "endtime": end_time.isoformat(),
-        "minmagnitude": min_magnitude,
-        "orderby": "time",
+        "starttime": starttime,
+        "endtime": endtime,
     }
-    
-    for page in client.paginate(f"{BASE_URL}/{QUERY_ENDPOINT}", params=params):
+
+    for page in client.paginate(
+        BASE_URL, params=params
+    ):  # <--- API endpoint for retrieving taxi ride data
         yield page
 
 
-def load_earthquakes() -> None:
-    """Run the earthquake data pipeline with improved configuration."""
-    pipeline = dlt.pipeline(
-        pipeline_name="usgs_earthquakes",
-        destination='filesystem',
-        dataset_name="earthquake_data",
-        progress="enlighten",  # Better progress visualization
-    )
-
-    # Create source with configuration for last 6 hours
-    source = usgs_earthquake_source(
-        start_time=pendulum.now().subtract(hours=6),
-        min_magnitude=1.0,
-    )
-
-    # Run the pipeline with parquet format for better performance
-    load_info = pipeline.run(
-        source,
-        loader_file_format="parquet",  # Use parquet for better performance
-    )
-    
-    print(f"Pipeline completed. Load info: {load_info}")
-    print(f"Last trace: {pipeline.last_trace}")
+pipeline = dlt.pipeline(
+    pipeline_name="us_earthquakes",
+    progress="enlighten",  # <--- Install enlighten for better visualization. Otherwise comment this line
+)
 
 
-if __name__ == "__main__":
-    load_earthquakes()
+for year in years:
+    for month in months:
+        # Format month to be two digits
+        month_str = f"{month:02}"
+        starttime = f"{year}-{month_str}-01"
+        last_day = monthrange(int(year), month)[
+            1
+        ]  # Get the last day of the current month
+        endtime = f"{year}-{month_str}-{last_day}"
+
+        bucket_path = os.path.join(
+            os.getenv("DESTINATION__FILESYSTEM__BUCKET_URL"),  # e.g. s3://my-bucket
+            "earthquakes_data",  # e.g. earthquakes_data
+            "raw",  # Subdirectory for raw data
+            year
+        )
+
+
+        print(f"Running pipeline for {year}/{month_str}")
+        load_info = pipeline.run(
+            us_earthquakes(
+                starttime=starttime,
+                endtime=endtime,
+            ),
+            destination=filesystem(bucket_path),
+            dataset_name=month_str,
+            loader_file_format="parquet",
+        )
+
+        print(pipeline.last_trace)
