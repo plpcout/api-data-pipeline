@@ -52,7 +52,8 @@ def create_pipeline() -> dlt.Pipeline:
         Configured DLT pipeline
     """
     return dlt.pipeline(
-        pipeline_name="us_earthquakes",
+        pipeline_name="api-to-gcs",
+        # TODO: Disable enlighten in production
         progress="enlighten",
     )
 
@@ -83,7 +84,7 @@ def generate_date_ranges(years: List[str], months: List[int]) -> List[Tuple[str,
     return date_ranges
 
 
-def build_destination_path(year: str) -> str:
+def build_destination_path(year: str, month: str) -> str:
     """
     Build the destination path for storing the data.
     
@@ -93,20 +94,21 @@ def build_destination_path(year: str) -> str:
     Returns:
         Full path to the destination
     """
-    bucket_url = os.getenv("DESTINATION__FILESYSTEM__BUCKET_URL")
+    bucket_url = os.getenv("API_TO_GSC__DESTINATION__FILESYSTEM__BUCKET_URL")
     if not bucket_url:
-        raise ValueError("DESTINATION__FILESYSTEM__BUCKET_URL environment variable is not set")
+        raise ValueError("API_TO_GSC__DESTINATION__FILESYSTEM__BUCKET_URL environment variable is not set")
         
     return os.path.join(
         bucket_url,
         "earthquakes_data",
         "raw",
-        year
+        year,
+        month
     )
 
 
 def run_pipeline(
-    years: List[str] = ["2025"],
+    years: List[str] = ["2015"],
     months: List[int] = list(range(1, 2))
 ) -> None:
     """
@@ -120,26 +122,31 @@ def run_pipeline(
     date_ranges = generate_date_ranges(years, months)
     
     for year, month_str, starttime, endtime in date_ranges:
-        bucket_path = build_destination_path(year)
+        bucket_path = build_destination_path(year, month_str)
         
         print(f"Running pipeline for {year}/{month_str}")
-        load_info = pipeline.run(
+        
+        # load_info = pipeline.run(
+        pipeline.run(
             us_earthquakes(
                 starttime=starttime,
                 endtime=endtime,
             ),
             destination=filesystem(bucket_path),
-            dataset_name=month_str,
+            dataset_name="files",
             loader_file_format="parquet",
         )
         
-        print(pipeline.last_trace)
+        # print(pipeline.last_trace)
 
 
 if __name__ == "__main__":
+
+    # Default run for 2015/01  
+    # run_pipeline()
+
     # Parameters for the pipeline testing
-    years = ["2015"]
-    months = list(range(1, 2))
+    years = ["2023", "2024"]
+    months = list(range(1, 13))
     run_pipeline(years, months)  
 
-    # run_pipeline() # Default run for 2025/01  
