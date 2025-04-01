@@ -1,0 +1,4 @@
+FROM kestra/kestra:latest
+USER root
+RUN pip install uv
+CMD ["server", "standalone"]
