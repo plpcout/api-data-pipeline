@@ -1,0 +1,7 @@
+id: kv_vars
+namespace: eq-proj
+tasks:
+  - id: destination_bucket
+    type: io.kestra.plugin.core.kv.Set
+    key: API_TO_GSC__DESTINATION__FILESYSTEM__BUCKET_URL
+    value: "gs://path-to-your-bucket" # TODO replace with your bucket name
