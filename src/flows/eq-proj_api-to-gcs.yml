@@ -1,0 +1,27 @@
+id: api-to-gcs
+namespace: eq-proj
+
+tasks:
+  - id: api_to_gcs
+    disabled: false
+    type: io.kestra.plugin.scripts.python.Commands
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    env:
+      API_TO_GSC__DESTINATION__FILESYSTEM__BUCKET_URL: "{{kv('API_TO_GSC__DESTINATION__FILESYSTEM__BUCKET_URL')}}"
+    beforeCommands:
+      - uv venv  2> /dev/null
+      - uv pip install "dlt[bigquery,duckdb,filesystem,gs]" 2> /dev/null
+      - uv pip install pyarrow 2> /dev/null
+      - uv pip install python-dotenv 2> /dev/null
+      - uv pip install enlighten 2> /dev/null
+      - . .venv/bin/activate 2> /dev/null
+    commands:
+      - python /files/rest_api_pipeline.py
+
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    disabled: true
+    cron: 0 9 * * *
