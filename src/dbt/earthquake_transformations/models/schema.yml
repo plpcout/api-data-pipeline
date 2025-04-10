@@ -1,0 +1,54 @@
+version: 2
+
+sources:
+  - name: bigquery_raw
+    database: "{{ env_var('GCP_PROJECT_ID') }}"
+    schema: "{{ var('raw_dataset') }}"
+
+    tables:
+      - name: raw_eq_data_2024_01
+        description: "Table containing raw earthquake data"
+
+
+
+
+models:
+  - name: stg_earthquakes
+    description: "Cleaned and standardized earthquake events data"
+#     columns:
+#       - name: earthquake_id
+#         description: "Unique identifier for the earthquake event"
+#         tests:
+#           - not_null
+#           - unique
+
+#       - name: event_time
+#         description: "Time when the earthquake occurred (ISO format)"
+#         tests:
+#           - not_null
+
+#       - name: magnitude
+#         description: "Magnitude of the earthquake"
+#         tests:
+#           - not_null
+
+#       - name: latitude
+#         description: "Latitude of the earthquake epicenter"
+#         tests:
+#           - not_null
+#           - dbt_utils.accepted_range:
+#               min_value: -90
+#               max_value: 90
+
+#       - name: longitude
+#         description: "Longitude of the earthquake epicenter"
+#         tests:
+#           - not_null
+#           - dbt_utils.accepted_range:
+#               min_value: -180
+#               max_value: 180
+
+#       - name: depth_km
+#         description: "Depth of the earthquake in kilometers"
+#         tests:
+#           - not_null

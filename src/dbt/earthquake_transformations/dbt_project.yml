@@ -25,19 +25,9 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   earthquake_transformations:
     # Staging models - initial data processing
-    staging:
-      +materialized: view
+    # staging:
       # +schema: staging
-
-    # Intermediate models - cleaned and prepared data
-    # intermediate:
       # +materialized: table
-      # +schema: intermediate
-
-    # Mart models - final analytical tables
-    # mart:
-      # +materialized: table
-      # +schema: mart
 
 vars:
   raw_dataset: raw_eq_dataset
