@@ -28,6 +28,7 @@ renamed as (
         {{ dbt.safe_cast('properties__place', api.Column.translate_type('string')) }} as raw_location,
         {{ dbt.safe_cast('properties__type', api.Column.translate_type('string')) }} as event_type,
         {{ dbt.safe_cast('properties__tsunami', api.Column.translate_type('integer')) }} as tsunami_alert,
+        {{ dbt.safe_cast('properties__country_code', api.Column.translate_type('string')) }} as country_code,
         {{ dbt.safe_cast('properties__country', api.Column.translate_type('string')) }} as country,
         {{ dbt.safe_cast('properties__state', api.Column.translate_type('string')) }}  as state,
         {{ dbt.safe_cast('properties__city', api.Column.translate_type('string')) }}  as city,
