@@ -6,7 +6,7 @@ sources:
     schema: "{{ var('raw_dataset') }}"
 
     tables:
-      - name: raw_eq_data_2024_01
+      - name: raw_eq_data_2024_*
         description: "Table containing raw earthquake data"
 
 
@@ -15,40 +15,70 @@ sources:
 models:
   - name: stg_earthquakes
     description: "Cleaned and standardized earthquake events data"
-#     columns:
-#       - name: earthquake_id
-#         description: "Unique identifier for the earthquake event"
-#         tests:
-#           - not_null
-#           - unique
+    columns:
+      - name: earthquake_key
+        data_type: string
+        description: "Unique identifier for the earthquake event, derived from the source earthquake ID"
+        tests:
+          - not_null
+          - unique
 
-#       - name: event_time
-#         description: "Time when the earthquake occurred (ISO format)"
-#         tests:
-#           - not_null
+      - name: source_earthquake_id
+        data_type: float64
+        description: "The original ID assigned by the network that identified the event, generally consisting of a two-character network identifier and an eight-character network-assigned code"
 
-#       - name: magnitude
-#         description: "Magnitude of the earthquake"
-#         tests:
-#           - not_null
+      - name: magnitude
+        data_type: float64
+        description: "The magnitude for the event, which is a logarithmic measure of the earthquake's size at its source. A one-unit increase typically represents a 32-fold increase in total energy released"
 
-#       - name: latitude
-#         description: "Latitude of the earthquake epicenter"
-#         tests:
-#           - not_null
-#           - dbt_utils.accepted_range:
-#               min_value: -90
-#               max_value: 90
+      - name: earthquake_time
+        data_type: timestamp
+        description: "Time when the earthquake initiates rupture (origin time). Stored in UTC time format to avoid confusion caused by local time zones and daylight savings time."
 
-#       - name: longitude
-#         description: "Longitude of the earthquake epicenter"
-#         tests:
-#           - not_null
-#           - dbt_utils.accepted_range:
-#               min_value: -180
-#               max_value: 180
+      - name: depth_km
+        data_type: float64
+        description: "Depth of the earthquake in kilometers where it begins to rupture. This depth may be relative to the WGS84 geoid, mean sea-level, or the average elevation of the seismic stations. The depth is the least-constrained parameter in earthquake location."
 
-#       - name: depth_km
-#         description: "Depth of the earthquake in kilometers"
-#         tests:
-#           - not_null
+      - name: latitude
+        data_type: float64
+        description: "Decimal degrees latitude of the epicenter. Negative values indicate southern latitudes. Position uncertainty varies from about 100m for best located events to 10s of kilometers for global events."
+
+      - name: longitude
+        data_type: float64
+        description: "Decimal degrees longitude of the epicenter. Negative values indicate western longitudes. Coordinates are given in the WGS84 reference frame."
+
+      - name: coordinates
+        data_type: string
+        description: "Combined latitude and longitude coordinates of the earthquake epicenter in WGS84 reference frame."
+
+      - name: raw_location
+        data_type: string
+        description: "Textual description of named geographic region near to the event. May include a city name or a Flinn-Engdahl Region name, based on GeoNames dataset references."
+
+      - name: event_type
+        data_type: string
+        description: "Type of seismic event (e.g., 'earthquake', 'quarry'). Indicates the classification of the seismic event."
+
+      - name: tsunami_alert
+        data_type: int64
+        description: "Flag set to 1 for large events in oceanic regions and 0 otherwise. The value does not guarantee if a tsunami actually did or will exist, but indicates potential tsunami risk."
+
+      - name: country
+        data_type: string
+        description: "Country where the earthquake event was detected, derived from the raw location data"
+
+      - name: state
+        data_type: string
+        description: "State or region where the earthquake event was detected, derived from the raw location data"
+
+      - name: city
+        data_type: string
+        description: "Nearest city to the earthquake event, derived from the raw location data using GeoNames database of populated places"
+
+      - name: population_nearby
+        data_type: int64
+        description: "Estimated population in the vicinity of the earthquake event based on nearby populated places"
+
+      - name: felt
+        data_type: int64
+        description: "The total number of felt reports submitted to the DYFI (Did You Feel It?) system"
