@@ -2,7 +2,8 @@
     config(
         schema='intermediate',
         materialized='table',
-        alias='fact_earthquakes'
+        alias='fact_earthquakes',
+        persist_docs={"relation": true, "columns": true},
     )
 }}
 

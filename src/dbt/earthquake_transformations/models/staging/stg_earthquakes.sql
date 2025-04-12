@@ -56,7 +56,7 @@ select
     state,
     city,
     population_nearby,
-    felt
+    coalesce(felt, 0) as felt
 
 from renamed
 
