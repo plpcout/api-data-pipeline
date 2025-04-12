@@ -43,7 +43,7 @@ select
         ['source_earthquake_id', 'earthquake_time', 'magnitude']
     ) }} AS earthquake_key,
     source_earthquake_id,
-    magnitude,
+    coalesce(magnitude, 0) as magnitude,
     earthquake_time,
     depth_km,
     latitude,
