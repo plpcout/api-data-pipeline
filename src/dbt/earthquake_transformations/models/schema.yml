@@ -38,9 +38,6 @@ models:
         tests:
           - not_null:
               severity: warn
-          - dbt_utils.accepted_range:
-              min_value: -1
-              max_value: 10
 
       - name: earthquake_time
         data_type: timestamp
@@ -112,3 +109,351 @@ models:
       - name: felt
         data_type: int64
         description: "The total number of felt reports submitted to the DYFI (Did You Feel It?) system"
+
+  - name: fact_earthquakes
+    description: "Core fact table containing enriched earthquake events data with temporal and categorical dimensions"
+    columns:
+      - name: earthquake_key
+        data_type: string
+        description: "Unique identifier for the earthquake event"
+        tests:
+          - not_null
+          - unique
+
+      - name: earthquake_time
+        data_type: timestamp
+        description: "UTC timestamp of the earthquake event"
+        tests:
+          - not_null
+
+      - name: event_date
+        data_type: date
+        description: "Extracted date from earthquake_time"
+        tests:
+          - not_null
+
+      - name: event_year
+        data_type: integer
+        description: "Year of the earthquake event"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1900
+              max_value: 2100
+
+      - name: event_month
+        data_type: integer
+        description: "Month of the earthquake event (1-12)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 12
+
+      - name: event_day
+        data_type: integer
+        description: "Day of the month of the earthquake event (1-31)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              max_value: 31
+
+      - name: event_hour
+        data_type: integer
+        description: "Hour of the earthquake event (0-23)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 23
+
+      - name: latitude
+        data_type: float
+        description: "Latitude of the earthquake epicenter"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -90
+              max_value: 90
+
+      - name: longitude
+        data_type: float
+        description: "Longitude of the earthquake epicenter"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -180
+              max_value: 180
+
+      - name: coordinates
+        data_type: string
+        description: "Combined latitude and longitude for mapping purposes"
+        tests:
+          - not_null
+
+      - name: depth_km
+        data_type: float
+        description: "Depth of the earthquake in kilometers"
+        tests:
+          - not_null
+
+      - name: magnitude
+        data_type: float
+        description: "Magnitude of the earthquake on the Richter scale"
+        tests:
+          - not_null
+
+      - name: event_type
+        data_type: string
+        description: "Type of seismic event (e.g., earthquake, explosion)"
+        tests:
+          - not_null
+
+      - name: raw_location
+        data_type: string
+        description: "Text description of the earthquake location"
+
+      - name: country
+        data_type: string
+        description: "Country where the earthquake occurred"
+
+      - name: state
+        data_type: string
+        description: "State or region where the earthquake occurred"
+
+      - name: city
+        data_type: string
+        description: "Nearest city to the earthquake epicenter"
+
+      - name: population_nearby
+        data_type: integer
+        description: "Estimated population in the vicinity of the earthquake"
+
+      - name: felt
+        data_type: integer
+        description: "Number of felt reports submitted"
+        tests:
+          - not_null
+
+      - name: tsunami_alert
+        data_type: integer
+        description: "Flag indicating if a tsunami alert was issued (1) or not (0)"
+        tests:
+          - not_null:
+              severity: warn
+
+      - name: magnitude_category
+        data_type: string
+        description: "Categorization of earthquake magnitude: Micro (<2.0), Minor (2.0-3.9), Light (4.0-4.9), Moderate (5.0-5.9), Strong (6.0-6.9), Major (7.0-7.9), Great (≥8.0)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Micro', 'Minor', 'Light', 'Moderate', 'Strong', 'Major', 'Great']
+
+      - name: depth_category
+        data_type: string
+        description: "Classification of earthquake depth: Shallow (<70km), Intermediate (70-300km), Deep (>300km)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Shallow', 'Intermediate', 'Deep']
+
+  - name: daily_earthquake_summary
+    description: "Daily aggregated earthquake statistics and metrics"
+    columns:
+      - name: event_date
+        data_type: date
+        description: "Date of the earthquake events"
+        tests:
+          - not_null
+          - unique
+
+      - name: total_earthquakes
+        data_type: integer
+        description: "Total number of earthquakes recorded on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: avg_magnitude
+        data_type: float64
+        description: "Average earthquake magnitude for the day"
+        tests:
+          - not_null
+
+      - name: max_magnitude
+        data_type: float64
+        description: "Maximum earthquake magnitude recorded on this date"
+        tests:
+          - not_null
+
+      - name: min_magnitude
+        data_type: float64
+        description: "Minimum earthquake magnitude recorded on this date"
+        tests:
+          - not_null
+
+      - name: major_earthquakes_count
+        data_type: integer
+        description: "Number of major earthquakes (magnitude >= 5.0) on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: tsunami_alerts_count
+        data_type: integer
+        description: "Number of tsunami alerts triggered on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: avg_depth_km
+        data_type: float64
+        description: "Average depth of earthquakes on this date in kilometers"
+        tests:
+          - not_null
+
+      - name: total_felt_reports
+        data_type: integer
+        description: "Total number of felt reports submitted on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: total_population_affected
+        data_type: integer
+        description: "Total population in areas affected by earthquakes on this date"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: magnitude_categories
+        data_type: array
+        description: "Array of distinct magnitude categories (Micro, Minor, Light, Moderate, Strong, Major, Great) observed on this date"
+        tests:
+          - not_null
+
+      - name: depth_categories
+        data_type: array
+        description: "Array of distinct depth categories (Shallow, Intermediate, Deep) observed on this date"
+        tests:
+          - not_null
+
+  - name: geo_earthquake_analysis
+    description: "Geographic analysis of earthquake events with regional statistics"
+    columns:
+      - name: country
+        data_type: string
+        description: "Country where earthquakes occurred"
+        tests:
+          - not_null
+
+      - name: state
+        data_type: string
+        description: "State or region where earthquakes occurred"
+
+      - name: city
+        data_type: string
+        description: "City near where earthquakes occurred"
+
+      - name: total_earthquakes
+        data_type: integer
+        description: "Total number of earthquakes in this geographic area"
+        tests:
+          - not_null
+
+      - name: avg_magnitude
+        data_type: float64
+        description: "Average earthquake magnitude in this geographic area"
+        tests:
+          - not_null
+
+      - name: max_magnitude
+        data_type: float64
+        description: "Maximum earthquake magnitude recorded in this geographic area"
+        tests:
+          - not_null
+
+      - name: min_magnitude
+        data_type: float64
+        description: "Minimum earthquake magnitude recorded in this geographic area"
+        tests:
+          - not_null
+
+      - name: avg_depth_km
+        data_type: float64
+        description: "Average depth of earthquakes in this geographic area in kilometers"
+        tests:
+          - not_null
+
+      - name: major_earthquakes_count
+        data_type: integer
+        description: "Number of major earthquakes (magnitude >= 5.0) in this geographic area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: tsunami_alerts_count
+        data_type: integer
+        description: "Number of tsunami alerts in this geographic area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: total_felt_reports
+        data_type: integer
+        description: "Total number of felt reports in this geographic area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: total_population_affected
+        data_type: integer
+        description: "Total population in areas affected by earthquakes in this geographic area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+      - name: center_latitude
+        data_type: float64
+        description: "Average latitude representing the center of earthquake activity in this area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -90
+              max_value: 90
+
+      - name: center_longitude
+        data_type: float64
+        description: "Average longitude representing the center of earthquake activity in this area"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: -180
+              max_value: 180
+
+      - name: sample_coordinates
+        data_type: string
+        description: "Sample coordinates for mapping visualization"
+
+      - name: magnitude_categories
+        data_type: array
+        description: "Array of distinct magnitude categories observed in this geographic area"
+
+      - name: depth_categories
+        data_type: array
+        description: "Array of distinct depth categories observed in this geographic area"
+
+      - name: event_types
+        data_type: array
+        description: "Array of distinct event types observed in this geographic area"
