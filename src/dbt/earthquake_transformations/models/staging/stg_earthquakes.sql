@@ -4,6 +4,11 @@
         materialized='table',
         alias='stg_earthquakes',
         persist_docs={"relation": true, "columns": true},
+        partition_by={
+            "field": "earthquake_time",
+            "data_type": "timestamp",
+            "granularity": "day"
+        }
     )
 }}
 
@@ -14,7 +19,7 @@ with source as (
             id,
             properties__time,
             {{ dbt.safe_cast('properties__mag', api.Column.translate_type('string')) }}) as rn
-    from {{ source('bigquery_raw', 'raw_eq_data_2024_*') }}
+    from {{ ref('raw_earthquakes') }}
 ),
 
 renamed as (

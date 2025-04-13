@@ -1,15 +1,18 @@
 version: 2
 
 sources:
-  - name: bigquery_raw
+  - name: raw_eq_dataset
     database: "{{ env_var('GCP_PROJECT_ID') }}"
     schema: "{{ var('raw_dataset') }}"
 
     tables:
-      - name: raw_eq_data_2024_*
+      - name: raw_eq_data_20*
         description: "Table containing raw earthquake data"
 
 models:
+  - name: raw_earthquakes
+    description: "Raw earthquake events data from multiple periods, compiled in one raw table for initial processing"
+
   - name: stg_earthquakes
     description: "Cleaned and standardized earthquake events data"
     columns:

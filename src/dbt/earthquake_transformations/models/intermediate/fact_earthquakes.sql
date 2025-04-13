@@ -4,6 +4,12 @@
         materialized='table',
         alias='fact_earthquakes',
         persist_docs={"relation": true, "columns": true},
+        partition_by={
+            "field": "event_date",
+            "data_type": "date",
+            "granularity": "day"
+        },
+        cluster_by = ['magnitude_category', 'country', 'depth_category']
     )
 }}
 
