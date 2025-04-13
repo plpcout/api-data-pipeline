@@ -30,7 +30,7 @@ services:
       - /tmp/kestra-wd:/tmp/kestra-wd
       - ~/.gcp/gcp-credentials.json:/.gcp/gcp-credentials.json
       - ./src/flows:/flows
-      - ./src/files:/files
+      - ./src/files:/app/storage/eq-proj/_files
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: "/.gcp/gcp-credentials.json"
       KESTRA_CONFIGURATION: |
