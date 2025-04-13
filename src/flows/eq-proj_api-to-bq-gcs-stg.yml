@@ -25,7 +25,7 @@ tasks:
     env:
       DESTINATION__FILESYSTEM__BUCKET_URL: "{{kv('DESTINATION__FILESYSTEM__BUCKET_URL')}}"
     commands:
-      - python api_to_bq_gcs_stg.py {{render(vars.year)}} {{render(vars.month)}}
+      - python ingest_data.py {{render(vars.year)}} {{render(vars.month)}}
 
 triggers:
   - id: trigger_run

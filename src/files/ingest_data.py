@@ -6,7 +6,7 @@ from typing import Dict, Generator, Tuple
 import dlt
 import pendulum
 import reverse_geocode as rg
-from api_extract_schema import schema
+from api_extract_schema import schema  # type: ignore
 from dlt.destinations import bigquery, filesystem
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
