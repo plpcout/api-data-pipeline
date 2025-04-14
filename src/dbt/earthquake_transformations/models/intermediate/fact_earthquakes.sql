@@ -28,7 +28,11 @@ fact_earthquakes as (
         extract(hour from earthquake_time) as event_hour,
         latitude,
         longitude,
-        coordinates,
+        concat(
+            latitude,
+            ',',
+            longitude
+        ) as coordinates,
         depth_km,
         magnitude,
         event_type,
