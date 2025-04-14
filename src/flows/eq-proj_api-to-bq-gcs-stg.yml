@@ -14,10 +14,10 @@ tasks:
   - id: run_script
     type: io.kestra.plugin.scripts.python.Commands
     beforeCommands:
-      - uv venv  2> /dev/null
-      - uv pip install kestra "dlt[bigquery,duckdb,filesystem,gs]" 2> /dev/null
-      - uv pip install reverse-geocode google-cloud-bigquery-storage 2> /dev/null
-      - . .venv/bin/activate 2> /dev/null
+      - uv venv --quiet
+      - . .venv/bin/activate --quiet
+      - uv pip install --quiet kestra "dlt[bigquery,duckdb,filesystem,gs]"
+      - uv pip install --quiet reverse-geocode google-cloud-bigquery-storage
     taskRunner:
       type: io.kestra.plugin.core.runner.Process
     namespaceFiles:
