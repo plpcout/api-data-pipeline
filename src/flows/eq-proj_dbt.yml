@@ -1,0 +1,51 @@
+id: dbt
+namespace: eq-proj
+
+inputs:
+  - id: dbt_env
+    type: SELECT
+    values:
+      - dev
+      - staging
+      - prod
+    defaults: dev
+    required: true
+
+tasks:
+  - id: dbt
+    type: io.kestra.plugin.core.flow.WorkingDirectory
+    tasks:
+      - id: cloneRepository
+        type: io.kestra.plugin.git.Clone
+        url: https://github.com/plpcout/ai-de-pipeline-proj-1
+        branch: dev
+        username: "{{kv('GH_USERNAME')}}"    # Comment this line for public repos
+        password: "{{kv('GH_TOKEN')}}"       # Comment this line for public repos
+
+      - id: dbt-build
+        type: io.kestra.plugin.dbt.cli.DbtCLI
+        inputFiles:
+          sa.json: "{{kv('GCP_SA')}}"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: sa.json
+          GCP_PROJECT_ID: "{{kv('GCP_PROJECT_ID')}}"
+        containerImage: ghcr.io/kestra-io/dbt-bigquery:latest
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+        projectDir: src/dbt/earthquake_transformations/
+        profiles: |
+          earthquake_transformations:
+            outputs:
+              {{inputs.dbt_env}}:
+                type: bigquery
+                dataset: "{{inputs.dbt_env}}_dbt"
+                job_execution_timeout_seconds: 300
+                job_retries: 1
+                location: US
+                method: oauth
+                priority: interactive
+                threads: 1
+        commands:
+          # - dbt deps --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
+          - dbt debug --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
+          # - dbt run --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
