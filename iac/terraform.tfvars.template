@@ -1,0 +1,6 @@
+project_id           = "your-project-id"
+region               = "project-region"
+environment          = "dev"
+gcs_bucket_name      = "your-bucket-name"
+bigquery_dataset_id  = "your_dataset_name"
+service_account_name = "your-service-account-name"
