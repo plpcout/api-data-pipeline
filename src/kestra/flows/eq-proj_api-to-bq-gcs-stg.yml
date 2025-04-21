@@ -10,7 +10,7 @@ tasks:
     type: io.kestra.plugin.core.execution.Labels
     labels:
       period: "{{render(vars.year)}}-{{render(vars.month)}}"
-
+  
   - id: run_script
     type: io.kestra.plugin.scripts.python.Commands
     beforeCommands:
@@ -22,8 +22,6 @@ tasks:
       type: io.kestra.plugin.core.runner.Process
     namespaceFiles:
       enabled: true
-    env:
-      DESTINATION__FILESYSTEM__BUCKET_URL: "{{kv('DESTINATION__FILESYSTEM__BUCKET_URL')}}"
     commands:
       - python ingest_data.py {{render(vars.year)}} {{render(vars.month)}}
 
