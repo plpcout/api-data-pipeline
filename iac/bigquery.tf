@@ -1,5 +1,5 @@
 resource "google_bigquery_dataset" "earthquake_dataset" {
-  dataset_id                 = var.bigquery_dataset_id
+  dataset_id                 = "${var.environment}_${var.bigquery_dataset_id}"
   friendly_name              = "Earthquake Data"
   description                = "Dataset containing earthquake data and analytics"
   location                   = var.region

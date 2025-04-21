@@ -1,5 +1,6 @@
 # Private
 **/private/*
+**/.ssh/
 
 # github
 .github/*
