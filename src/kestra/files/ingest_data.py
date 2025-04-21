@@ -186,6 +186,23 @@ def build_destination_bucket_path() -> str:
     # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
     return os.path.join(bucket_url, "earthquakes_data", "raw")
 
+# TODO
+def build_destination_bq_dataset() -> str:
+    """
+    Build the destination path for storing the data.
+
+    Args:
+        year: Year for which the data is being stored
+
+    Returns:
+        Full path to the destination
+    """
+    dataset_name = os.getenv("DESTINATION__BIGQUERY__DATASET_NAME")
+    if not dataset_name:
+        raise ValueError("DESTINATION__BIGQUERY__DATASET_NAME environment variable is not set")
+
+    return dataset_name
+
 
 def run_pipeline(year, month) -> None:
     """
@@ -200,8 +217,11 @@ def run_pipeline(year, month) -> None:
     starttime, endtime = _generate_date_ranges(year, month)
 
     bucket_path = build_destination_bucket_path()
+    bq_dataset_name = build_destination_bq_dataset()
 
     logger.info(f"Running pipeline for {year}/{month}")
+    logger.info(f"DataLake - Staging data into GCS Bucket: {bucket_path}")
+    logger.info(f"DataWarehousing - Loading data into BigQuery Dataset: {bq_dataset_name}")
 
     load_info = pipeline.run(
         get_api_data_flat(
@@ -212,7 +232,7 @@ def run_pipeline(year, month) -> None:
         table_name=f"raw_eq_data_{year}_{month}",
         loader_file_format="parquet",
         destination=bigquery(
-            dataset_name="raw_eq_dataset",
+            dataset_name=bq_dataset_name,
         ),
         staging=filesystem(
             bucket_path,
@@ -226,6 +246,7 @@ def run_pipeline(year, month) -> None:
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(
         description="Process earthquake data for a specific year and month"
     )

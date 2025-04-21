@@ -1,0 +1,49 @@
+# Create a GCP VM instance
+resource "google_compute_instance" "kestra_vm" {
+  name         = var.kestra_vm_name
+  machine_type = var.kestra_machine_type
+
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size  = 30
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {
+      // Ephemeral public IP
+    }
+  }
+
+  metadata = {
+    ssh-keys  = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
+    user-data = file("${path.module}/startup.sh")
+  }
+  service_account {
+    email  = google_service_account.kestra_service_account.email
+    scopes = ["cloud-platform"]
+  }
+
+
+  # Allow HTTP/HTTPS traffic
+  tags                      = ["http-server", "https-server"]
+  allow_stopping_for_update = true
+}
+
+# Firewall rule for Kestra UI
+resource "google_compute_firewall" "kestra-ui" {
+  name    = "allow-kestra-ui"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["8080"] # Default Kestra UI port
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["http-server", "https-server"]
+}
+
