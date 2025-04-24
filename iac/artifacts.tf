@@ -55,7 +55,8 @@ resource "null_resource" "deploy_kestra" {
       user        = var.ssh_user
       private_key = tls_private_key.ssh_key.private_key_pem
       host        = google_compute_instance.kestra_vm.network_interface[0].access_config[0].nat_ip
-      # Add a timeout to ensure we wait for the VM to be fully initialized
+      # Add a timeout to ensure the VM to be fully initialized
+      timeout = "5m"
     }
   }
 
@@ -88,7 +89,6 @@ resource "null_resource" "deploy_kestra" {
     inline = [
       local.dlt_vars,
       local.google_vars,
-      #   local.kestra_vars
     ]
   }
 
@@ -109,11 +109,6 @@ resource "time_sleep" "resource_waiting" {
 
 # Null resource to provisioners for file transfer and remote execution
 resource "null_resource" "run_kestra" {
-  # Trigger a redeploy when any of these changes
-  #   triggers = {
-  #     instance_id = google_compute_instance.kestra_vm.id
-  #   }
-
   # Start Docker Compose
   provisioner "remote-exec" {
     inline = [
