@@ -17,22 +17,19 @@ tasks:
     tasks:
       - id: cloneRepository
         type: io.kestra.plugin.git.Clone
-        url: https://github.com/plpcout/ai-de-pipeline-proj-1
-        branch: dev
-        username: "{{kv('GH_USERNAME')}}"    # Comment this line for public repos
-        password: "{{kv('GH_TOKEN')}}"       # Comment this line for public repos
+        url: https://github.com/plpcout/api-data-pipeline
+        branch: dev                             # This branch is gonna be changed latter to be used in CI/CD workflow
+        username: "{{kv('GH_USERNAME')}}"     # Uncomment this line for private repos
+        password: "{{kv('GH_TOKEN')}}"        # Uncomment this line for private repos
 
       - id: dbt-build
         type: io.kestra.plugin.dbt.cli.DbtCLI
-        inputFiles:
-          sa.json: "{{kv('GCP_SA')}}"
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: sa.json
-          GCP_PROJECT_ID: "{{kv('GCP_PROJECT_ID')}}"
         containerImage: ghcr.io/kestra-io/dbt-bigquery:latest
         taskRunner:
           type: io.kestra.plugin.scripts.runner.docker.Docker
         projectDir: src/dbt/earthquake_transformations/
+        env:
+          GCP_PROJECT_ID: "{{envs.gcp_project_id}}"
         profiles: |
           earthquake_transformations:
             outputs:
@@ -46,6 +43,6 @@ tasks:
                 priority: interactive
                 threads: 1
         commands:
-          # - dbt deps --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
+          - dbt deps --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
           - dbt debug --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
-          # - dbt run --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
+          - dbt run --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}} --vars '{"env":"{{inputs.dbt_env}}"}'

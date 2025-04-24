@@ -34,6 +34,16 @@ locals {
         cat /opt/kestra/.env
     } > /opt/kestra/.env.tmp && mv /opt/kestra/.env.tmp /opt/kestra/.env
     EOT
+
+  kestra_vars = <<-EOT
+    #!/bin/bash
+    # Get the current GCP_PROJECT_ID value from .env
+    # Append new KESTRA_GCP_PROJECT_ID at the top of the file
+    {
+        echo KESTRA_$(cat /opt/kestra/.env | grep GCP_PROJECT_ID)
+        cat /opt/kestra/.env
+    } > /opt/kestra/.env.tmp && mv /opt/kestra/.env.tmp /opt/kestra/.env
+    EOT
 }
 # Null resource to provisioners for file transfer and remote execution
 resource "null_resource" "deploy_kestra" {
@@ -89,6 +99,7 @@ resource "null_resource" "deploy_kestra" {
     inline = [
       local.dlt_vars,
       local.google_vars,
+      local.kestra_vars,
     ]
   }
 
