@@ -18,9 +18,9 @@ tasks:
       - id: cloneRepository
         type: io.kestra.plugin.git.Clone
         url: https://github.com/plpcout/api-data-pipeline
-        branch: dev                             # This branch is gonna be changed latter to be used in CI/CD workflow
-        username: "{{kv('GH_USERNAME')}}"     # Uncomment this line for private repos
-        password: "{{kv('GH_TOKEN')}}"        # Uncomment this line for private repos
+        branch: dev                      
+        username: "{{envs.gh_user}}"        # Comment/Remove this line for public repos
+        password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
 
       - id: dbt-build
         type: io.kestra.plugin.dbt.cli.DbtCLI
