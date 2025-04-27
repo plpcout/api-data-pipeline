@@ -3,8 +3,7 @@ version: 2
 sources:
   - name: raw_eq_dataset
     database: "{{ env_var('GCP_PROJECT_ID') }}"
-    schema: "{{ var('raw_dataset') }}"
-
+    schema: "{{ var('env') }}_api_raw_earthquake_data"
     tables:
       - name: raw_eq_data_20*
         description: "Table containing raw earthquake data"

@@ -27,6 +27,3 @@ models:
     # Staging models - initial data processing
     staging:
 
-
-vars:
-  raw_dataset: raw_eq_dataset
