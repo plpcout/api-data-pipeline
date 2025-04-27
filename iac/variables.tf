@@ -15,10 +15,9 @@ variable "zone" {
   default     = "us-central1-a"
 }
 
-variable "environment" {
+variable "env" {
   description = "Environment (dev/stg/prod)"
   type        = string
-  default     = "dev"
 }
 
 variable "gcs_bucket_name" {
