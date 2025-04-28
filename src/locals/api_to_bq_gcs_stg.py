@@ -1,0 +1,258 @@
+import logging
+import os
+from calendar import monthrange
+from typing import Dict, Generator, List, Tuple
+
+import dlt
+import pendulum
+import reverse_geocode as rg
+from dlt.destinations import bigquery, filesystem
+from dlt.sources.helpers.rest_client import RESTClient
+from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# API constants
+API_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
+METHOD = "query"
+BASE_URL = f"{API_URL}/{METHOD}"
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+
+def _get_location_details(latitude: float, longitude: float) -> Dict[str, str]:
+    """
+    Get location details from coordinates using reverse geocoding.
+
+    Args:
+        latitude: Latitude coordinate
+        longitude: Longitude coordinate
+
+    Returns:
+        Dictionary containing location details (country_code, country, city, population, state)
+    """
+    cords = (latitude, longitude)
+    geo_details = rg.get(cords)
+    results = {
+        "country_code": geo_details.get("country_code", None),
+        "country": geo_details.get("country", None),
+        "city": geo_details.get("city", None),
+        "population": geo_details.get("population", None),
+        "state": geo_details.get("state", None),
+    }
+
+    return results
+
+
+def _convert_timestamp_to_iso(timestamp: int) -> str:
+    """
+    Convert millisecond timestamp to ISO 8601 string.
+
+    Args:
+        timestamp: Unix timestamp in milliseconds
+
+    Returns:
+        ISO 8601 formatted string
+    """
+    return (
+        pendulum.from_timestamp(timestamp / 1000, tz="UTC")
+        .replace(microsecond=0)
+        .to_iso8601_string()
+    )
+
+
+def _process_earthquake_record(record: Dict) -> Dict:
+    """
+    Process and transform earthquake record by converting timestamps and flattening geometry.
+
+    Args:
+        record: Dictionary containing earthquake record data
+
+    Returns:
+        Processed record with transformed timestamps and flattened geometry
+    """
+
+    # Convert timestamps
+    record["properties"]["time"] = _convert_timestamp_to_iso(
+        record["properties"]["time"]
+    )
+    record["properties"]["updated"] = _convert_timestamp_to_iso(
+        record["properties"]["updated"]
+    )
+
+    # Flatten geometry
+    if "geometry" not in record:
+        return None
+    record["properties"]["g_type"] = record["geometry"]["type"]
+    coordinates = record["geometry"]["coordinates"]
+    longitude = coordinates[0]
+    latitude = coordinates[1]
+    depth = coordinates[2]
+    record["properties"]["g_longitude"] = longitude
+    record["properties"]["g_latitude"] = latitude
+    record["properties"]["g_depth"] = depth
+
+    # Reverse geocode to get location information
+    geo_details = _get_location_details(latitude, longitude)
+    record["properties"]["country_code"] = geo_details["country_code"]
+    record["properties"]["country"] = geo_details["country"]
+    record["properties"]["state"] = geo_details["state"]
+    record["properties"]["city"] = geo_details["city"]
+    record["properties"]["population"] = geo_details["population"]
+
+    del record["geometry"]
+    return record
+
+
+def _generate_date_ranges(
+    years: List[int], months: List[int]
+) -> List[Tuple[str, str, str, str]]:
+    """
+    Generate start and end dates for each month in the given years.
+
+    Args:
+        years: List of years as strings (e.g., ["2021", "2022"])
+        months: List of month numbers (e.g., range(1, 13))
+
+    Returns:
+        List of tuples containing (year, month_str, starttime, endtime)
+    """
+    date_ranges = []
+    for year in years:
+        for month in months:
+            # Format month to be two digits
+            month_str = f"{month:02}"
+            starttime = f"{year}-{month_str}-01"
+            # Get the last day of the current month
+            last_day = monthrange(year, month)[1]
+            endtime = f"{year}-{month_str}-{last_day}"
+
+            date_ranges.append((year, month_str, starttime, endtime))
+
+    return date_ranges
+
+
+@dlt.resource(
+    name="earthquakes_api",
+    write_disposition="replace",
+)
+def get_api_data_flat(
+    starttime: str,
+    endtime: str,
+) -> Generator[Dict, None, None]:
+    """
+    Resource function to fetch earthquake data from USGS API with flattened coordinates.
+    Extracts longitude, latitude, and depth from geometry.coordinates.
+
+    Args:
+        starttime: Start date in ISO format (YYYY-MM-DD)
+        endtime: End date in ISO format (YYYY-MM-DD)
+
+    Yields:
+        Dictionary containing earthquake data with flattened coordinates
+    """
+    try:
+        client = RESTClient(
+            base_url=BASE_URL,
+            paginator=OffsetPaginator(limit=20000, offset=1, total_path=None),
+            data_selector="features",
+        )
+        params = {
+            "format": "geojson",
+            "starttime": starttime,
+            "endtime": endtime,
+        }
+
+        for page in client.paginate(
+            BASE_URL,
+            params=params,
+        ):
+            for record in page:
+                record = _process_earthquake_record(record)
+            # page = _batch_process_geocoding(page)
+            yield page
+    except Exception as e:
+        logging.error(f"Error fetching earthquake data: {e}")
+        raise
+
+
+def create_pipeline() -> dlt.Pipeline:
+    """
+    Create and configure the DLT pipeline.
+
+    Returns:
+        Configured DLT pipeline
+    """
+    return dlt.pipeline(pipeline_name="api_extract")
+
+
+def build_destination_bucket_path() -> str:
+    """
+    Build the destination path for storing the data.
+
+    Args:
+        year: Year for which the data is being stored
+
+    Returns:
+        Full path to the destination
+    """
+    bucket_url = os.getenv("DESTINATION__FILESYSTEM__BUCKET_URL")
+    if not bucket_url:
+        raise ValueError(
+            "DESTINATION__FILESYSTEM__BUCKET_URL environment variable is not set"
+        )
+
+    # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
+    return os.path.join(bucket_url, "earthquakes_data", "raw")
+
+
+def run_pipeline(years: List[int] = None, months: List[int] = None) -> None:
+    """
+    Run the earthquake data pipeline for specified years and months.
+
+    Args:
+        years: List of years to process
+        months: List of months to process
+    """
+    if years is None:
+        years = [2024]
+    if months is None:
+        months = list(range(1, 13))
+    pipeline = create_pipeline()
+    date_ranges = _generate_date_ranges(years, months)
+
+    for year, month_str, starttime, endtime in date_ranges:
+        bucket_path = build_destination_bucket_path()
+
+        logger.info(f"Running pipeline for {year}/{month_str}")
+
+        load_info = pipeline.run(
+            get_api_data_flat(
+                starttime=starttime,
+                endtime=endtime,
+            ),
+            dataset_name="files",
+            table_name=f"raw_eq_data_{year}_{month_str}",
+            loader_file_format="parquet",
+            destination=bigquery(
+                dataset_name="raw_eq_dataset",
+            ),
+            staging=filesystem(
+                bucket_path,
+                extra_placeholders={
+                    "file_name": f"extract_{year}_{month_str}",
+                },
+                layout="{table_name}/{file_name}.{ext}",
+            ),
+        )
+        print(load_info)
+
+
+if __name__ == "__main__":
+    years = [2011]
+    months = [3]
+    run_pipeline(years, months)
