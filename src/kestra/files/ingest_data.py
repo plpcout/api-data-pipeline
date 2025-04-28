@@ -186,7 +186,6 @@ def build_destination_bucket_path() -> str:
     # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
     return os.path.join(bucket_url, "earthquakes_data", "raw")
 
-# TODO
 def build_destination_bq_dataset() -> str:
     """
     Build the destination path for storing the data.
