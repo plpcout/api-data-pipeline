@@ -56,9 +56,10 @@ pluginDefaults:
   - type: io.kestra.plugin.git
     values:
       url: https://github.com/plpcout/api-data-pipeline
-      branch: "{{render(vars.git_branch)}}"
-      username: plpcout                   # Comment/Remove this line for public repos
-      password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
+      branch: main
+      # branch: "{{render(vars.git_branch)}}" # Uncomment this line to use the branch variable in production
+      # username: plpcout                   # Comment/Remove this line for public repos
+      # password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
 
 triggers:
   - id: trigger_run
