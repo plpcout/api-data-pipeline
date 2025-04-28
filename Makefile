@@ -80,11 +80,11 @@ app-ui:
 
 
 .PHONY: backfill
-## Trigger backfill flow. Usage: make backfill start=YYYY-MM-DD (Default: 2025-03-01)
+## Trigger backfill | Default: From 2024-01-01 to the previous month | Usage: make backfill [start=YYYY-MM-DD] [end=YYYY-MM-DD]
 backfill:
-	$(eval start ?= 2025-03-01)
+	$(eval start ?= 2024-01-01)
+	$(eval end ?= $(shell date -d "$(shell date +%Y-%m-01) -1 day" +%Y-%m-%d))
 	$(eval API_URL := $(shell terraform -chdir=iac output -raw kestra_ui_url))
-	$(eval end := $(shell date -d "$(shell date +%Y-%m-01) -1 day" +%Y-%m-%d))
 	@curl -X PUT "$(API_URL)/api/v1/triggers" \
 		-H 'Content-Type: application/json' \
 		-d "{\
@@ -111,7 +111,7 @@ backfill:
 
 
 .PHONY: dbt-run
-## Run dbt transformations. Usage: make dbt-run <env=[dev|stg|prod]> - (Default: dev)
+## Run dbt transformations | Default: env=dev | Usage: make dbt-run [env=dev|stg|prod]
 dbt-run:
 	@if [ -z "${ENV}" ]; then \
 		echo "${RED}Error: ENV variable is not set.${RESET}"; \
