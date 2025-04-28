@@ -1,4 +1,4 @@
-id: dbt2
+id: dbt
 namespace: eq-proj
 
 inputs:
@@ -10,6 +10,9 @@ inputs:
       - prod
     defaults: dev
     required: true
+
+variables:
+  git_branch: "{{ inputs.dbt_env == 'prod' ? 'main' : inputs.dbt_env }}"
 
 tasks:
   - id: dbt
@@ -53,6 +56,12 @@ pluginDefaults:
   - type: io.kestra.plugin.git
     values:
       url: https://github.com/plpcout/api-data-pipeline
+      branch: "{{render(vars.git_branch)}}"
       username: plpcout                   # Comment/Remove this line for public repos
       password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
-      branch: dev
+
+triggers:
+  - id: trigger_run
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 25 3 1 * *
+    disabled: false
