@@ -1,7 +1,7 @@
 {{
     config(
         schema='intermediate',
-        materialized='table',
+        materialized='incremental',
         alias='fact_earthquakes',
         persist_docs={"relation": true, "columns": true},
         partition_by={
@@ -9,12 +9,17 @@
             "data_type": "date",
             "granularity": "day"
         },
-        cluster_by = ['magnitude_category', 'country', 'depth_category']
+        cluster_by = ['magnitude_category', 'country', 'depth_category'],
+        unique_key='earthquake_key',
+        incremental_strategy='merge'
     )
 }}
 
 with source_earthquakes as (
     select * from {{ ref('stg_earthquakes') }}
+    {% if is_incremental() %}
+    where earthquake_time > (select max(earthquake_time) from {{ this }})
+    {% endif %}
 ),
 
 fact_earthquakes as (

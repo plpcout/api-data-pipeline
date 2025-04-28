@@ -1,4 +1,4 @@
-id: dbt
+id: dbt2
 namespace: eq-proj
 
 inputs:
@@ -15,21 +15,23 @@ tasks:
   - id: dbt
     type: io.kestra.plugin.core.flow.WorkingDirectory
     tasks:
-      - id: cloneRepository
-        type: io.kestra.plugin.git.Clone
-        url: https://github.com/plpcout/api-data-pipeline
-        branch: dev                      
-        username: "{{envs.gh_user}}"        # Comment/Remove this line for public repos
-        password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
+      - id: sync
+        type: io.kestra.plugin.git.SyncNamespaceFiles
+        namespace: "{{ flow.namespace }}"
+        gitDirectory: src/dbt/
+        dryRun: false
+        # disabled: true # This line can be uncommented after the first run.
 
       - id: dbt-build
         type: io.kestra.plugin.dbt.cli.DbtCLI
         containerImage: ghcr.io/kestra-io/dbt-bigquery:latest
         taskRunner:
           type: io.kestra.plugin.scripts.runner.docker.Docker
-        projectDir: src/dbt/earthquake_transformations/
         env:
           GCP_PROJECT_ID: "{{envs.gcp_project_id}}"
+        namespaceFiles:
+          enabled: true
+        projectDir: earthquake_transformations/
         profiles: |
           earthquake_transformations:
             outputs:
@@ -43,6 +45,14 @@ tasks:
                 priority: interactive
                 threads: 1
         commands:
-          - dbt deps --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
-          - dbt debug --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}}
-          - dbt run --project-dir src/dbt/earthquake_transformations/ --target {{inputs.dbt_env}} --vars '{"env":"{{inputs.dbt_env}}"}'
+          - dbt deps --project-dir earthquake_transformations --target {{inputs.dbt_env}}
+          - dbt debug --project-dir earthquake_transformations --target {{inputs.dbt_env}}
+          - dbt run --project-dir earthquake_transformations --target {{inputs.dbt_env}} --vars '{"env":"{{inputs.dbt_env}}"}'
+
+pluginDefaults:
+  - type: io.kestra.plugin.git
+    values:
+      url: https://github.com/plpcout/api-data-pipeline
+      username: plpcout                   # Comment/Remove this line for public repos
+      password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
+      branch: dev

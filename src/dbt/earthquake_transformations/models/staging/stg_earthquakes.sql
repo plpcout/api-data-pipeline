@@ -1,14 +1,16 @@
 {{
     config(
         schema='staging',
-        materialized='table',
+        materialized='incremental',
         alias='stg_earthquakes',
         persist_docs={"relation": true, "columns": true},
         partition_by={
             "field": "earthquake_time",
             "data_type": "timestamp",
             "granularity": "day"
-        }
+        },
+        unique_key='earthquake_key',
+        incremental_strategy='merge'
     )
 }}
 
@@ -20,6 +22,11 @@ with source as (
             properties__time,
             {{ dbt.safe_cast('properties__mag', api.Column.translate_type('string')) }}) as rn
     from {{ ref('raw_earthquakes') }}
+    {% if is_incremental() %}
+    where partition_time > (
+        select max(earthquake_time) from {{ this }}
+    )
+    {% endif %}
 ),
 
 renamed as (
@@ -65,6 +72,6 @@ select
 
 from renamed
 
-{% if var('is_test_run', default=true) %}
-    limit 100
-{% endif %}
+-- {% if var('is_test_run', default=true) %}
+--     limit 100
+-- {% endif %}
