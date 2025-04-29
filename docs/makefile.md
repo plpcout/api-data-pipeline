@@ -136,3 +136,11 @@ The Makefile automatically loads these variables from your `.env` file:
 - `GOOGLE_APPLICATION_CREDENTIALS`: Path to service account key
 - `GCP_PROJECT_ID`: Your GCP project ID
 - `ENV`: Environment (dev/stg/prod)
+
+You can source the `.env` file manually if needed for other purposes:
+
+```bash
+set -o allexport
+source .env
+set +o allexport
+```

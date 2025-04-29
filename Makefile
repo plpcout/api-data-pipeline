@@ -32,7 +32,6 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-
 .PHONY: gcloud-sa-auth
 ## Authenticate with Google Cloud using service account credentials
 gcloud-sa-auth:
@@ -40,7 +39,11 @@ gcloud-sa-auth:
 		echo "${RED}Failed to authenticate with Google Cloud${RESET}"; \
 		exit 1; \
 	fi
-	@echo "${GREEN}Authenticated with Google Cloud using service account.${RESET}"
+	@if ! gcloud config set project ${GCP_PROJECT_ID}; then \
+		echo "${RED}Failed to set Google Cloud project${RESET}"; \
+		exit 1; \
+	fi
+	@echo "${GREEN}Authenticated with Google Cloud using service account and set project to ${GCP_PROJECT_ID}${RESET}"
 
 
 .PHONY: activate-apis

@@ -23,7 +23,7 @@ variable "env" {
 variable "gcs_bucket_name" {
   description = "Name of the GCS bucket for storing earthquake data"
   type        = string
-  default     = "earthquake-data-bucket"
+  default     = "eq-bucket"
 }
 
 variable "bigquery_dataset_id" {
