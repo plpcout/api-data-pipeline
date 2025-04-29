@@ -1,5 +1,15 @@
 # Api Data Pipeline Project
 
+[![Python](https://img.shields.io/badge/Python-3.10-4B8BBE.svg?style=flat&logo=python&logoColor=FFD43B&labelColor=3776AB)](https://www.python.org/)
+[![uv](https://img.shields.io/badge/astral/uv-261230?style=flat&logo=uv&logoColor=DE5FE9&labelColor=261230)](https://docs.astral.sh/uv/getting-started/installation/)
+[![Terraform](https://img.shields.io/badge/Terraform-844FBA?logo=terraform&logoColor=fff&style=flat)](https://www.terraform.io/)
+[![GCP](https://img.shields.io/badge/GCP-4285F4?style=flat&logo=googlecloud&logoColor=fff&labelColor=4285F4)](https://cloud.google.com/)
+[![Docker](https://img.shields.io/badge/docker-2496ED?style=flat&logo=docker&logoColor=fff&labelColor=2496ED)](https://www.docker.com/)
+[![Kestra](https://img.shields.io/badge/Kestra-blueviolet?style=flat&logoColor=fff&labelColor=blueviolet)](https://www.kestra.io/)
+[![dlt](https://img.shields.io/badge/dlt-1.9.0-C6D300?style=flat&logo=dlt&labelColor=59C1D5)](https://dlthub.com/)
+[![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=fff&style=flat)](https://www.getdbt.com/)
+[![Makefile](https://img.shields.io/badge/Makefile-000000?style=flat&logo=make&logoColor=fff&labelColor=000000)](https://www.gnu.org/software/make/)
+
 This is a data pipeline project that extracts, loads and transforms(ELT) earthquake data from the USGS API into Google Cloud Platform (GCP) services and provides a dashboard for visualization of the enriched data.
 
 ## Dashboard Information
