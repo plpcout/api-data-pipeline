@@ -35,7 +35,7 @@ ENV=dev
 ## 4. GCP authentication & API enablement
 
 Use the `make` commands to authenticate and enable APIs.
-Additional info on make commands can be found in the [Makefile Guide](docs/makefile.md).
+Additional info on make commands can be found in the [Makefile Guide](makefile.md).
 
 ```bash
 make gcloud-sa-auth
