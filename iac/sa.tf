@@ -28,6 +28,13 @@ resource "google_service_account_iam_binding" "kestra_sa_user" {
   ]
 }
 
+# Grant compute instance admin role for the system service account
+resource "google_project_iam_member" "compute_instance_admin" {
+  project = var.project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:service-${data.google_project.default.number}@compute-system.iam.gserviceaccount.com"
+}
+
 resource "google_service_account_key" "kestra_service_account_key" {
   service_account_id = google_service_account.kestra_service_account.name
 }

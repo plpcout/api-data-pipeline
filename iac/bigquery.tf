@@ -2,7 +2,7 @@ resource "google_bigquery_dataset" "earthquake_dataset" {
   dataset_id                 = "${var.env}_api_raw_${var.bigquery_dataset_id}"
   friendly_name              = "Earthquake Data"
   description                = "Dataset containing earthquake data and analytics"
-  location                   = var.region
+  location                   = var.location
   delete_contents_on_destroy = true
 
   labels = {
@@ -40,7 +40,7 @@ resource "google_bigquery_dataset" "datasets" {
   dataset_id                 = each.value.dataset_id
   friendly_name              = each.value.friendly_name
   description                = each.value.description
-  location                   = var.region
+  location                   = var.location
   delete_contents_on_destroy = true
   labels = {
     environment = var.env

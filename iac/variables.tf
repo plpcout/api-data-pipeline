@@ -3,10 +3,15 @@ variable "project_id" {
   type        = string
 }
 
+variable "location" {
+  description = "The GCP location for resource creation"
+  type        = string
+  default     = "US"
+}
 variable "region" {
   description = "The default GCP region for resource creation"
   type        = string
-  default     = "US"
+  default     = "us-central1"
 }
 
 variable "zone" {

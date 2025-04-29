@@ -21,6 +21,10 @@ resource "google_compute_instance" "kestra_vm" {
   metadata = {
     ssh-keys  = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
     user-data = file("${path.module}/startup.sh")
+    startup-script = <<-EOF
+      cd /opt/kestra
+      sudo docker compose up -d
+    EOF
   }
   service_account {
     email  = google_service_account.kestra_service_account.email
@@ -45,5 +49,24 @@ resource "google_compute_firewall" "kestra-ui" {
 
   source_ranges = ["0.0.0.0/0"]
   target_tags   = ["http-server", "https-server"]
+}
+
+resource "google_compute_resource_policy" "monthly_boot" {
+  name        = "resource-policy-monthly-boot"
+  region = var.region
+  description = "Monthly boot policy"
+  instance_schedule_policy {
+    time_zone = "UTC"
+
+    # Schedule for the VM to start at 3:00 AM UTC on the first day of every month
+    vm_start_schedule {
+      schedule = "0 3 1 * *"
+    }
+
+    # Schedule for the VM to stop at 4:30 AM UTC on the first day of every month
+    vm_stop_schedule {
+      schedule = "30 4 1 * *"
+    }
+  }
 }
 
