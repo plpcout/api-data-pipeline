@@ -1,3 +1,7 @@
+# Create a static IP address
+resource "google_compute_address" "static_ip" {
+  name   = "${var.kestra_vm_name}-static-ip"
+}
 # Create a GCP VM instance
 resource "google_compute_instance" "kestra_vm" {
   name         = var.kestra_vm_name
@@ -14,7 +18,7 @@ resource "google_compute_instance" "kestra_vm" {
   network_interface {
     network = "default"
     access_config {
-      // Ephemeral public IP
+      nat_ip = google_compute_address.static_ip.address
     }
   }
 
