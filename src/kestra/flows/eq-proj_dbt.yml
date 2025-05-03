@@ -77,8 +77,9 @@ pluginDefaults:
       # username: "{{envs.gh_user}}"        # Comment/Remove this line for public repos
       # password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
 
+# https://kestra.io/plugins/core/trigger/io.kestra.plugin.core.trigger.toggle#examples-body
 triggers:
   - id: trigger_run
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: 25 3 1 * *
+    cron: 45 3 1 * *
     disabled: false

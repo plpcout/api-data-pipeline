@@ -29,5 +29,5 @@ tasks:
 triggers:
   - id: trigger_run
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: 10 3 1 * *
+    cron: 30 3 1 * *
     disabled: false

@@ -10,6 +10,7 @@ from api_extract_schema import schema  # type: ignore
 from dlt.destinations import bigquery, filesystem
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
+
 from kestra import Kestra
 
 # API constants
@@ -186,6 +187,7 @@ def build_destination_bucket_path() -> str:
     # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
     return os.path.join(bucket_url, "earthquakes_data", "raw")
 
+
 def build_destination_bq_dataset() -> str:
     """
     Build the destination path for storing the data.
@@ -245,7 +247,6 @@ def run_pipeline(year, month) -> None:
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Process earthquake data for a specific year and month"
     )

@@ -1,6 +1,6 @@
 # Create a static IP address
 resource "google_compute_address" "static_ip" {
-  name   = "${var.kestra_vm_name}-static-ip"
+  name = "${var.kestra_vm_name}-static-ip"
 }
 # Create a GCP VM instance
 resource "google_compute_instance" "kestra_vm" {
@@ -23,8 +23,8 @@ resource "google_compute_instance" "kestra_vm" {
   }
 
   metadata = {
-    ssh-keys  = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
-    user-data = file("${path.module}/startup.sh")
+    ssh-keys       = "${var.ssh_user}:${tls_private_key.ssh_key.public_key_openssh}"
+    user-data      = file("${path.module}/startup.sh")
     startup-script = <<-EOF
       cd /opt/kestra
       sudo docker compose up -d
@@ -35,7 +35,8 @@ resource "google_compute_instance" "kestra_vm" {
     scopes = ["cloud-platform"]
   }
 
-
+  resource_policies = [google_compute_resource_policy.monthly_boot.id]
+  
   # Allow HTTP/HTTPS traffic
   tags                      = ["http-server", "https-server"]
   allow_stopping_for_update = true
@@ -57,7 +58,7 @@ resource "google_compute_firewall" "kestra-ui" {
 
 resource "google_compute_resource_policy" "monthly_boot" {
   name        = "resource-policy-monthly-boot"
-  region = var.region
+  region      = var.region
   description = "Monthly boot policy"
   instance_schedule_policy {
     time_zone = "UTC"
@@ -66,10 +67,10 @@ resource "google_compute_resource_policy" "monthly_boot" {
     vm_start_schedule {
       schedule = "0 3 1 * *"
     }
-
-    # Schedule for the VM to stop at 4:30 AM UTC on the first day of every month
+    
+    # Schedule for the VM to stop at 4:00 AM UTC on the first day of every month
     vm_stop_schedule {
-      schedule = "30 4 1 * *"
+      schedule = "0 4 1 * *"
     }
   }
 }
