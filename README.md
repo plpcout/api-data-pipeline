@@ -34,6 +34,23 @@ The dashboard also features filters to view data by country, type, magnitude cat
 
 - [Earthquakes Report Dashboard](https://lookerstudio.google.com/reporting/d20e44a3-1200-4785-8da5-cc219ba558ed).
 
+## Data Source
+
+This project utilizes the **USGS Earthquake Catalog API**, which provides comprehensive earthquake data from around the world. The USGS (United States Geological Survey) [Earthquake Hazards Program](https://www.usgs.gov/programs/earthquake-hazards) is part of the National Earthquake Hazards Reduction Program (NEHRP) and provides several key features:
+
+### USGS Earthquake Catalog API
+
+- **Data Coverage**: Global earthquake events, updated in near real-time
+- **Time Range**: Historical data to present
+- **Update Frequency**: Updates near real-time for recent events
+- **Data Format**: GeoJSON feed format (also available in XML, CSV, KML, Quakeml, Text/plain)
+
+The API allows querying based on various parameters including time range, geographical bounds, and magnitude thresholds. For more information, check the following resources:
+
+- [USGS Earthquake Catalog API Documentation](https://earthquake.usgs.gov/fdsnws/event/1/).
+- [GeoJSON Summary Format](https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php)
+- [Event Terms Documentation](https://earthquake.usgs.gov/data/comcat/data-eventterms.php)
+
 ## Problem Statement
 
 Earthquake monitoring agencies like the USGS publish real-time and historical seismic event data through open APIs. However, the raw data arrives as JSON feeds with varying schemas, making
@@ -54,16 +71,17 @@ This repository delivers a cloud-native, automated data pipeline solution that a
 
 ![alt text](assets/images/image-1.png)
 
-1. **Infrastructure-as-Code**: Uses Terraform to provision GCP resources (GCS bucket, BigQuery dataset, Compute Engine VM for orchestration, etc).
-2. **Service Account Authentication**: Leverages a secure GCP service account for API access and resource management.
-3. **Workflow Orchestration**: Deploys Kestra on a managed VM to schedule and trigger pipeline jobs.
-4. **Data Extraction & Loading**: Implements Python scripts with the DLT library to:
+1. **Infrastructure-as-Code**: Uses [Terraform](https://developer.hashicorp.com/terraform) to provision [GCP](https://cloud.google.com/) resources (GCS buckets, BigQuery datasets, Compute Engine VM for orchestration, Managed Service Accounts, SSH keys and more).
+2. **Service Account Authentication**: Leverages a secure GCP service account for API access and resource management provisioned by Terraform as well.
+3. **Workflow Orchestration**: Deploys [Kestra](https://kestra.io/) application ([Docker](https://www.docker.com/)) on a managed VM to schedule and trigger pipeline jobs.
+   - Jobs use [UV](https://docs.astral.sh/uv/), as an extremely fast python package/project manager.
+4. **Data Extraction & Loading**: Implements Python scripts with [DLT](https://dlthub.com/) to:
    - Fetch USGS API earthquake data
-   - Load raw data as parquet files into GCS
+   - Load raw data as `parquet` files into GCS
    - Incrementally load data into BigQuery
-   - Perform reverse geocoding to add human‑readable location data.
-5. **Transformations**: Uses dbt to model, test, and document cleaned and aggregated tables (e.g., daily summaries, geographical analyses).
-6. **Automation & CLI**: Provides Makefile targets for ease of:
+   - Perform reverse geocoding to add human‑readable location data.  
+5. **Transformations**: Uses [dbt](https://www.getdbt.com/) to model, test, and document cleaned and aggregated tables (e.g., daily summaries, geographical analyses).
+6. **Automation & CLI**: Provides [Makefile](https://www.gnu.org/software/make/) targets for ease of:
    - Authentication
    - API activation
    - Terraform provisioning
@@ -72,6 +90,8 @@ This repository delivers a cloud-native, automated data pipeline solution that a
    - Teardown of provisioned resources.
 
 By combining IaC, orchestration, incremental loading, and modern data modeling, this project ensures reliable, reproducible, and scalable processing of earthquake catalog data for monitoring and analytics.
+
+<!-- TODO add a tech stack list here -->
 
 ## Local Development Setup - Replication
 
@@ -109,4 +129,17 @@ This section provides a guide to replicate the project in a fresh environment. I
       - Monitor the backfill process in the Kestra UI.
    6. `make dbt-run` - Run dbt transformations
       - Monitor the dbt run process in the Kestra UI.
-   7. `make down` - (Optional) Destroy Terraform-managed cloud infrastructure
+   7. `make fr-dbt-run` - Run dbt transformations with full refresh
+      - This command will recreate the tables in BigQuery for a full refresh.
+   8. `make down` - (Optional) Destroy Terraform-managed cloud infrastructure
+
+## TODO
+
+- [x] Optimize vm working hours (less costs)
+- [ ] Add Daily processing (on top of chunk backfilling)
+- [ ] Improve architecture diagram
+- [ ] Add tech stack section
+- [ ] Detach Kestra backend from VM (Postgres Container)
+- [ ] Review and refactor python script
+- [ ] Add python tests
+- [ ] Add actions for CI/CD

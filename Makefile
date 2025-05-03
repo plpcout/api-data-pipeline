@@ -131,7 +131,6 @@ dbt-run:
 	@echo "$(shell terraform -chdir=iac output -raw kestra_ui_url)/ui/flows/edit/eq-proj/dbt/executions"
 
 
-###### --full-refresh
 .PHONY: fr-dbt-run
 ## Run dbt transformations with full refresh | Default: env=dev | Usage: make fr-dbt-run [env=dev|stg|prod]
 fr-dbt-run:
