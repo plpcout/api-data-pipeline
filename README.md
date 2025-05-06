@@ -136,7 +136,7 @@ This section provides a guide to replicate the project in a fresh environment. I
 ## TODO
 
 - [x] Optimize vm working hours (less costs)
-- [ ] Add Daily processing (on top of chunk backfilling)
+- [x] Add Daily processing (on top of chunk backfilling)
 - [ ] Improve architecture diagram
 - [ ] Add tech stack section
 - [ ] Detach Kestra backend from VM (Postgres Container)
