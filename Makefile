@@ -83,10 +83,10 @@ app-ui:
 
 
 .PHONY: backfill
-## Trigger backfill | Default: From 2024-01-01 to the previous month | Usage: make backfill [start=YYYY-MM-DD] [end=YYYY-MM-DD]
+## Trigger backfill | Default: From 2024-01-01 to the current month | Usage: make backfill [start=YYYY-MM-DD] [end=YYYY-MM-DD]
 backfill:
 	$(eval start ?= 2024-01-01)
-	$(eval end ?= $(shell date -d "$(shell date +%Y-%m-01) -1 day" +%Y-%m-%d))
+	$(eval end ?= $(shell date -d "$(shell date +%Y-%m-01) +1 month -1 day" +%Y-%m-%d))
 	$(eval API_URL := $(shell terraform -chdir=iac output -raw kestra_ui_url))
 	@curl -X PUT "$(API_URL)/api/v1/triggers" \
 		-H 'Content-Type: application/json' \
@@ -106,7 +106,7 @@ backfill:
 			},\
 			\"flowId\": \"api-to-bq-gcs-stg\",\
 			\"namespace\": \"eq-proj\",\
-			\"triggerId\": \"trigger_run\"\
+			\"triggerId\": \"monthly_run\"\
 		}"
 	@echo "\n\n${GREEN}Backfill triggered${RESET}"
 	@echo "\n${YELLOW}Check Kestra UI for the backfill execution status.${RESET}"

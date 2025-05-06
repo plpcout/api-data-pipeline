@@ -81,5 +81,5 @@ pluginDefaults:
 triggers:
   - id: trigger_run
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: 45 3 1 * *
+    cron: 20 3 * * *
     disabled: false

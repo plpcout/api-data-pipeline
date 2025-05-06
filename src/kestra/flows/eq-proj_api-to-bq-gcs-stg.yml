@@ -2,9 +2,9 @@ id: api-to-bq-gcs-stg
 namespace: eq-proj
 
 variables:
-  year: "{{ (labels.backfill | default('false')) == 'true' ? trigger.date | date('yyyy') : (trigger.date | dateAdd(-1, 'DAYS') | date('yyyy')) }}"
-  month: "{{ (labels.backfill | default('false')) == 'true' ? trigger.date | date('MM') : (trigger.date | dateAdd(-1, 'DAYS') | date('MM')) }}"
-
+  year: "{{ trigger.date | date('yyyy') }}"
+  month: "{{ trigger.date | date('MM') }}"
+  is_current_month: "{{ (execution.startDate | date('yyyy') == trigger.date | date('yyyy')) and  (execution.startDate | date('MM') == trigger.date | date('MM')) }}"
 
 tasks:
   - id: set_label
@@ -26,8 +26,27 @@ tasks:
     commands:
       - python ingest_data.py {{render(vars.year)}} {{render(vars.month)}}
 
+  - id: if
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ (labels.backfill | default('false')) == 'true' and render(vars.is_current_month) == 'true'}}"
+    then:
+      - id: toggle_monthly
+        type: "io.kestra.plugin.core.trigger.Toggle"
+        trigger: monthly_run
+        disabled: false
+
 triggers:
-  - id: trigger_run
+  - id: monthly_run
     type: io.kestra.plugin.core.trigger.Schedule
     cron: 30 3 1 * *
     disabled: false
+    stopAfter:
+      - FAILED
+
+
+  - id: daily_run
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 10 3 * * *
+    disabled: false
+    stopAfter:
+      - FAILED

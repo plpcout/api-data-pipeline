@@ -36,7 +36,7 @@ resource "google_compute_instance" "kestra_vm" {
   }
 
   resource_policies = [google_compute_resource_policy.monthly_boot.id]
-  
+
   # Allow HTTP/HTTPS traffic
   tags                      = ["http-server", "https-server"]
   allow_stopping_for_update = true
@@ -63,14 +63,13 @@ resource "google_compute_resource_policy" "monthly_boot" {
   instance_schedule_policy {
     time_zone = "UTC"
 
-    # Schedule for the VM to start at 3:00 AM UTC on the first day of every month
+    # Schedule for the VM to start at 3:00 AM UTC every day
     vm_start_schedule {
-      schedule = "0 3 1 * *"
+      schedule = "0 3 * * *"
     }
-    
-    # Schedule for the VM to stop at 4:00 AM UTC on the first day of every month
+    # Schedule for the VM to stop at 4:00 AM UTC  every day
     vm_stop_schedule {
-      schedule = "0 4 1 * *"
+      schedule = "0 4 * * *"
     }
   }
 }
