@@ -11,8 +11,23 @@ inputs:
     defaults: dev
     required: true
 
+  - id: full_refresh
+    type: BOOLEAN
+    defaults: false
+    required: true
+
+  - id: proj_dir
+    type: STRING
+    defaults: earthquake_transformations
+    required: true
+
 variables:
   git_branch: "{{ inputs.dbt_env == 'prod' ? 'main' : inputs.dbt_env }}"
+  fr: "{{ inputs.full_refresh ? '--full-refresh' : '' }}"
+  dbt_vars: "{\"env\":\"{{inputs.dbt_env}}\"}"
+  dbt_deps_command: "dbt deps --project-dir {{inputs.proj_dir}} --target {{inputs.dbt_env}}"
+  dbt_debug_command: "dbt debug --project-dir {{inputs.proj_dir}} --target {{inputs.dbt_env}}"
+  dbt_run_command: "dbt run --project-dir {{inputs.proj_dir}} {{vars.fr}} --target {{inputs.dbt_env}} --vars '{{vars.dbt_vars}}'"
 
 tasks:
   - id: dbt
@@ -34,9 +49,9 @@ tasks:
           GCP_PROJECT_ID: "{{envs.gcp_project_id}}"
         namespaceFiles:
           enabled: true
-        projectDir: earthquake_transformations/
+        projectDir: "{{inputs.proj_dir}}/"
         profiles: |
-          earthquake_transformations:
+          "{{inputs.proj_dir}}":
             outputs:
               {{inputs.dbt_env}}:
                 type: bigquery
@@ -48,9 +63,10 @@ tasks:
                 priority: interactive
                 threads: 1
         commands:
-          - dbt deps --project-dir earthquake_transformations --target {{inputs.dbt_env}}
-          - dbt debug --project-dir earthquake_transformations --target {{inputs.dbt_env}}
-          - dbt run --project-dir earthquake_transformations --target {{inputs.dbt_env}} --vars '{"env":"{{inputs.dbt_env}}"}'
+          - "{{ render(vars.dbt_deps_command) }}"
+          - "{{ render(vars.dbt_debug_command) }}"
+          - "{{ render(vars.dbt_run_command) }}"
+
 
 pluginDefaults:
   - type: io.kestra.plugin.git
@@ -58,11 +74,12 @@ pluginDefaults:
       url: https://github.com/plpcout/api-data-pipeline
       branch: main
       # branch: "{{render(vars.git_branch)}}" # Uncomment this line to use the branch variable in production
-      # username: plpcout                   # Comment/Remove this line for public repos
+      # username: "{{envs.gh_user}}"        # Comment/Remove this line for public repos
       # password: "{{envs.gh_token}}"       # Comment/Remove this line for public repos
 
+# https://kestra.io/plugins/core/trigger/io.kestra.plugin.core.trigger.toggle#examples-body
 triggers:
   - id: trigger_run
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: 25 3 1 * *
+    cron: 20 3 * * *
     disabled: false

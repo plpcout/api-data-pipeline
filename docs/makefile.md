@@ -104,6 +104,19 @@ This will show all available commands with their descriptions.
 
    Executes DBT transformations on the ingested data.
 
+4. **Run DBT with Full Refresh**
+
+   ```bash
+   # Using environment from .env file
+   make fr-dbt-run
+
+   # Specify environment explicitly
+   make fr-dbt-run env=dev  # or env=stg or env=prod
+   ```
+
+    Runs DBT transformations with a full refresh, recreating the tables in BigQuery.
+    - This command is particularly useful after significant changes to the data pipeline or when new data sources are integrated.
+
 ## Project Execution Order
 
 1. Set up `.env` file

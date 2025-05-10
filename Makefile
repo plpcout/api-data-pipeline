@@ -43,7 +43,7 @@ gcloud-sa-auth:
 		echo "${RED}Failed to set Google Cloud project${RESET}"; \
 		exit 1; \
 	fi
-	@echo "${GREEN}Authenticated with Google Cloud using service account and set project to ${GCP_PROJECT_ID}${RESET}"
+	@echo "${GREEN}Authenticated with Google Cloud using service account and set project to: ${RESET}${GCP_PROJECT_ID}"
 
 
 .PHONY: activate-apis
@@ -65,7 +65,7 @@ activate-apis:
 		echo "${RED}Error: Failed to enable one or more APIs${RESET}"; \
 		exit 1; \
 	fi
-	@echo "${GREEN}Required APIs activated successfully.${RESET}"
+	@echo "${GREEN}Required APIs have been successfully activated for project: ${RESET}${GCP_PROJECT_ID}${RESET}"
 
 .PHONY: up
 ## Initialize Terraform and provision cloud infrastructure setup
@@ -83,10 +83,10 @@ app-ui:
 
 
 .PHONY: backfill
-## Trigger backfill | Default: From 2024-01-01 to the previous month | Usage: make backfill [start=YYYY-MM-DD] [end=YYYY-MM-DD]
+## Trigger backfill | Default: From 2024-01-01 to the current month | Usage: make backfill [start=YYYY-MM-DD] [end=YYYY-MM-DD]
 backfill:
 	$(eval start ?= 2024-01-01)
-	$(eval end ?= $(shell date -d "$(shell date +%Y-%m-01) -1 day" +%Y-%m-%d))
+	$(eval end ?= $(shell date -d "$(shell date +%Y-%m-01) +1 month -1 day" +%Y-%m-%d))
 	$(eval API_URL := $(shell terraform -chdir=iac output -raw kestra_ui_url))
 	@curl -X PUT "$(API_URL)/api/v1/triggers" \
 		-H 'Content-Type: application/json' \
@@ -106,7 +106,7 @@ backfill:
 			},\
 			\"flowId\": \"api-to-bq-gcs-stg\",\
 			\"namespace\": \"eq-proj\",\
-			\"triggerId\": \"trigger_run\"\
+			\"triggerId\": \"monthly_run\"\
 		}"
 	@echo "\n\n${GREEN}Backfill triggered${RESET}"
 	@echo "\n${YELLOW}Check Kestra UI for the backfill execution status.${RESET}"
@@ -130,6 +130,24 @@ dbt-run:
 	@echo "\n${YELLOW}Check Kestra UI for the execution status.${RESET}"
 	@echo "$(shell terraform -chdir=iac output -raw kestra_ui_url)/ui/flows/edit/eq-proj/dbt/executions"
 
+
+.PHONY: fr-dbt-run
+## Run dbt transformations with full refresh | Default: env=dev | Usage: make fr-dbt-run [env=dev|stg|prod]
+fr-dbt-run:
+	@if [ -z "${ENV}" ]; then \
+		echo "${RED}Error: ENV variable is not set.${RESET}"; \
+		exit 1; \
+	fi
+	@$(eval API_URL := $(shell terraform -chdir=iac output -raw kestra_ui_url))
+	@curl -v -X POST \
+		-H 'Content-Type: multipart/form-data' \
+		-F 'dbt_env=${ENV}' \
+		-F 'full_refresh=true' \
+		'$(API_URL)/api/v1/executions/eq-proj/dbt?labels=call:api&labels=run:full-refresh'
+	
+	@echo "\n\n${GREEN}DBT full refresh triggered${RESET}" 
+	@echo "\n${YELLOW}Check Kestra UI for the execution status.${RESET}"
+	@echo "$(shell terraform -chdir=iac output -raw kestra_ui_url)/ui/flows/edit/eq-proj/dbt/executions"
 
 .PHONY: down
 ## Destroy Terraform-managed cloud infrastructure
