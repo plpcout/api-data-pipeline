@@ -143,3 +143,4 @@ This section provides a guide to replicate the project in a fresh environment. I
 - [ ] Review and refactor python script
 - [ ] Add python tests
 - [ ] Add actions for CI/CD
+- [ ] Move Terraform backend to GCS
