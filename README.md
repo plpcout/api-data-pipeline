@@ -124,7 +124,7 @@ This section provides a guide to replicate the project in a fresh environment. I
         - This may take a few minutes to complete.
    4. `make app-ui` - Open Kestra UI in default browser
    5. `make backfill` - Trigger backfill flow (backfill start=YYYY-MM-DD end=YYYY-MM-DD)
-      - Default: from 2024-01-01 to previous month
+      - Default: from 2024-01-01 to current month
       - This may take a few minutes to complete as well.
       - Monitor the backfill process in the Kestra UI.
    6. `make dbt-run` - Run dbt transformations
