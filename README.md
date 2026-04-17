@@ -9,6 +9,7 @@
 [![dlt](https://img.shields.io/badge/dlt-1.9.0-C6D300?style=flat&logo=dlt&labelColor=59C1D5)](https://dlthub.com/)
 [![dbt](https://img.shields.io/badge/dbt-FF694B?logo=dbt&logoColor=fff&style=flat)](https://www.getdbt.com/)
 [![Makefile](https://img.shields.io/badge/Makefile-000000?style=flat&logo=make&logoColor=fff&labelColor=000000)](https://www.gnu.org/software/make/)
+[![GitHub Actions Badge](https://img.shields.io/badge/GitHub%20Actions-2088FF?logo=githubactions&logoColor=fff&style=flat)](https://github.com/features/actions)
 
 This is a data pipeline project that extracts, loads and transforms(ELT) earthquake data from the USGS API into Google Cloud Platform (GCP) services and provides a dashboard for visualization of the enriched data.
 
@@ -141,6 +142,6 @@ This section provides a guide to replicate the project in a fresh environment. I
 - [ ] Add tech stack section
 - [ ] Detach Kestra backend from VM (Postgres Container)
 - [ ] Review and refactor python script
-- [ ] Add python tests
-- [ ] Add actions for CI/CD
+- [x] Add python tests
+- [x] Add actions for CI/CD
 - [ ] Move Terraform backend to GCS
