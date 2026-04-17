@@ -152,9 +152,8 @@ def get_api_data_flat(starttime: str, endtime: str) -> Generator[Dict, None, Non
             BASE_URL,
             params=params,
         ):
-            for record in page:
-                record = _process_earthquake_record(record)
-            yield page
+            processed = [_process_earthquake_record(record) for record in page]
+            yield [r for r in processed if r is not None]
     except Exception as e:
         logger.info(f"Error fetching earthquake data: {e}")
         raise
