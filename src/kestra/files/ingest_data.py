@@ -1,14 +1,11 @@
 import argparse
 from calendar import monthrange
-from typing import Dict, Generator, Tuple
+from typing import Tuple
 
 import dlt
-from api_extract_schema import schema  # type: ignore
-from config import BASE_URL, build_destination_bq_dataset, build_destination_bucket_path
+from config import build_destination_bq_dataset, build_destination_bucket_path
 from dlt.destinations import bigquery, filesystem
-from dlt.sources.helpers.rest_client import RESTClient
-from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
-from transformations import process_earthquake_record
+from earthquake_client import get_api_data_flat
 
 from kestra import Kestra
 
@@ -31,46 +28,6 @@ def _generate_date_ranges(year, month) -> Tuple[str, str]:
     endtime = f"{year}-{month}-{last_day}"
 
     return (starttime, endtime)
-
-
-@dlt.resource(
-    name="earthquakes_api",
-    write_disposition="replace",
-    columns=schema,
-)
-def get_api_data_flat(starttime: str, endtime: str) -> Generator[Dict, None, None]:
-    """
-    Resource function to fetch earthquake data from USGS API with flattened coordinates.
-    Extracts longitude, latitude, and depth from geometry.coordinates.
-
-    Args:
-        starttime: Start date in ISO format (YYYY-MM-DD)
-        endtime: End date in ISO format (YYYY-MM-DD)
-
-    Yields:
-        Dictionary containing earthquake data with flattened coordinates
-    """
-    try:
-        client = RESTClient(
-            base_url=BASE_URL,
-            paginator=OffsetPaginator(limit=20000, offset=1, total_path=None),
-            data_selector="features",
-        )
-        params = {
-            "format": "geojson",
-            "starttime": starttime,
-            "endtime": endtime,
-        }
-
-        for page in client.paginate(
-            BASE_URL,
-            params=params,
-        ):
-            processed = [process_earthquake_record(record) for record in page]
-            yield [r for r in processed if r is not None]
-    except Exception as e:
-        logger.info(f"Error fetching earthquake data: {e}")
-        raise
 
 
 def create_pipeline() -> dlt.Pipeline:
