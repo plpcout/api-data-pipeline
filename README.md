@@ -138,6 +138,7 @@ This section provides a guide to replicate the project in a fresh environment. I
 
 - [x] Optimize vm working hours (less costs)
 - [x] Add Daily processing (on top of chunk backfilling)
+- [x] Split ingest_data.py logic
 - [ ] Improve architecture diagram
 - [ ] Add tech stack section
 - [ ] Detach Kestra backend from VM (Postgres Container)

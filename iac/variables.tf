@@ -11,13 +11,13 @@ variable "location" {
 variable "region" {
   description = "The default GCP region for resource creation"
   type        = string
-  default     = "us-central1"
+  default     = "us-south1"
 }
 
 variable "zone" {
   description = "The default GCP zone for resource creation"
   type        = string
-  default     = "us-central1-a"
+  default     = "us-south1-a"
 }
 
 variable "env" {
