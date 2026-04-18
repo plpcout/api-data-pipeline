@@ -1,104 +1,15 @@
 import argparse
-import os
 from calendar import monthrange
-from typing import Dict, Generator, Tuple
+from typing import Tuple
 
 import dlt
-import pendulum
-import reverse_geocode as rg
-from api_extract_schema import schema  # type: ignore
+from config import build_destination_bq_dataset, build_destination_bucket_path
 from dlt.destinations import bigquery, filesystem
-from dlt.sources.helpers.rest_client import RESTClient
-from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
+from earthquake_client import get_api_data_flat
 
 from kestra import Kestra
 
-# API constants
-API_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
-METHOD = "query"
-BASE_URL = f"{API_URL}/{METHOD}"
-
 logger = Kestra.logger()
-
-
-def _get_location_details(latitude: float, longitude: float) -> Dict[str, str]:
-    """
-    Get location details from coordinates using reverse geocoding.
-
-    Args:
-        latitude: Latitude coordinate
-        longitude: Longitude coordinate
-
-    Returns:
-        Dictionary containing location details (country_code, country, city, population, state)
-    """
-    cords = (latitude, longitude)
-    geo_details = rg.get(cords)
-    results = {
-        "country_code": geo_details.get("country_code", None),
-        "country": geo_details.get("country", None),
-        "city": geo_details.get("city", None),
-        "population": geo_details.get("population", None),
-        "state": geo_details.get("state", None),
-    }
-
-    return results
-
-
-def _convert_timestamp_to_iso(timestamp: int) -> str:
-    """
-    Convert millisecond timestamp to ISO 8601 string.
-
-    Args:
-        timestamp: Unix timestamp in milliseconds
-
-    Returns:
-        ISO 8601 formatted string
-    """
-    return (
-        pendulum.from_timestamp(timestamp / 1000, tz="UTC")
-        .replace(microsecond=0)
-        .to_iso8601_string()
-    )
-
-
-def _process_earthquake_record(record: Dict) -> Dict:
-    """
-    Process and transform earthquake record by converting timestamps and flattening geometry.
-
-    Args:
-        record: Dictionary containing earthquake record data
-
-    Returns:
-        Processed record with transformed timestamps and flattened geometry
-    """
-
-    # Convert timestamps
-    record["properties"]["time"] = _convert_timestamp_to_iso(record["properties"]["time"])
-    record["properties"]["updated"] = _convert_timestamp_to_iso(record["properties"]["updated"])
-
-    # Flatten geometry
-    if "geometry" not in record:
-        return None
-    record["properties"]["g_type"] = record["geometry"]["type"]
-    coordinates = record["geometry"]["coordinates"]
-    longitude = coordinates[0]
-    latitude = coordinates[1]
-    depth = coordinates[2]
-    record["properties"]["g_longitude"] = longitude
-    record["properties"]["g_latitude"] = latitude
-    record["properties"]["g_depth"] = depth
-
-    # Reverse geocode to get location information
-    geo_details = _get_location_details(latitude, longitude)
-    record["properties"]["country_code"] = geo_details["country_code"]
-    record["properties"]["country"] = geo_details["country"]
-    record["properties"]["state"] = geo_details["state"]
-    record["properties"]["city"] = geo_details["city"]
-    record["properties"]["population"] = geo_details["population"]
-
-    del record["geometry"]
-    return record
 
 
 def _generate_date_ranges(year, month) -> Tuple[str, str]:
@@ -119,47 +30,6 @@ def _generate_date_ranges(year, month) -> Tuple[str, str]:
     return (starttime, endtime)
 
 
-@dlt.resource(
-    name="earthquakes_api",
-    write_disposition="replace",
-    columns=schema,
-)
-def get_api_data_flat(starttime: str, endtime: str) -> Generator[Dict, None, None]:
-    """
-    Resource function to fetch earthquake data from USGS API with flattened coordinates.
-    Extracts longitude, latitude, and depth from geometry.coordinates.
-
-    Args:
-        starttime: Start date in ISO format (YYYY-MM-DD)
-        endtime: End date in ISO format (YYYY-MM-DD)
-
-    Yields:
-        Dictionary containing earthquake data with flattened coordinates
-    """
-    try:
-        client = RESTClient(
-            base_url=BASE_URL,
-            paginator=OffsetPaginator(limit=20000, offset=1, total_path=None),
-            data_selector="features",
-        )
-        params = {
-            "format": "geojson",
-            "starttime": starttime,
-            "endtime": endtime,
-        }
-
-        for page in client.paginate(
-            BASE_URL,
-            params=params,
-        ):
-            for record in page:
-                record = _process_earthquake_record(record)
-            yield page
-    except Exception as e:
-        logger.info(f"Error fetching earthquake data: {e}")
-        raise
-
-
 def create_pipeline() -> dlt.Pipeline:
     """
     Create and configure the DLT pipeline.
@@ -168,41 +38,6 @@ def create_pipeline() -> dlt.Pipeline:
         Configured DLT pipeline
     """
     return dlt.pipeline(pipeline_name="api_extract")
-
-
-def build_destination_bucket_path() -> str:
-    """
-    Build the destination path for storing the data.
-
-    Args:
-        year: Year for which the data is being stored
-
-    Returns:
-        Full path to the destination
-    """
-    bucket_url = os.getenv("DESTINATION__FILESYSTEM__BUCKET_URL")
-    if not bucket_url:
-        raise ValueError("DESTINATION__FILESYSTEM__BUCKET_URL environment variable is not set")
-
-    # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
-    return os.path.join(bucket_url, "earthquakes_data", "raw")
-
-
-def build_destination_bq_dataset() -> str:
-    """
-    Build the destination path for storing the data.
-
-    Args:
-        year: Year for which the data is being stored
-
-    Returns:
-        Full path to the destination
-    """
-    dataset_name = os.getenv("DESTINATION__BIGQUERY__DATASET_NAME")
-    if not dataset_name:
-        raise ValueError("DESTINATION__BIGQUERY__DATASET_NAME environment variable is not set")
-
-    return dataset_name
 
 
 def run_pipeline(year, month) -> None:
