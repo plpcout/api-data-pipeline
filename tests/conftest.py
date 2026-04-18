@@ -24,7 +24,7 @@ def mock_reverse_geocode():
         "state": "Hawaii",
         "population": 2575,
     }
-    with patch("ingest_data._get_location_details", return_value=fake_geo):
+    with patch("transformations.get_location_details", return_value=fake_geo):
         yield fake_geo
 
 

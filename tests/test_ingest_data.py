@@ -1,33 +1,31 @@
 import pytest
-
 from ingest_data import (
-    _convert_timestamp_to_iso,
     _generate_date_ranges,
-    _process_earthquake_record,
     build_destination_bq_dataset,
     build_destination_bucket_path,
 )
+from transformations import convert_timestamp_to_iso, process_earthquake_record
 
 
 class TestConvertTimestampToIso:
     def test_known_timestamp(self):
-        assert _convert_timestamp_to_iso(1609459200000) == "2021-01-01T00:00:00Z"
+        assert convert_timestamp_to_iso(1609459200000) == "2021-01-01T00:00:00Z"
 
     def test_zero_timestamp(self):
-        assert _convert_timestamp_to_iso(0) == "1970-01-01T00:00:00Z"
+        assert convert_timestamp_to_iso(0) == "1970-01-01T00:00:00Z"
 
     def test_large_timestamp(self):
-        assert "2025" in _convert_timestamp_to_iso(1750076400000)
+        assert "2025" in convert_timestamp_to_iso(1750076400000)
 
     def test_microseconds_stripped(self):
-        result = _convert_timestamp_to_iso(1609459200123)
+        result = convert_timestamp_to_iso(1609459200123)
         assert result.endswith("Z")
         assert ".123" not in result
 
 
 class TestProcessEarthquakeRecord:
     def test_complete_record(self, sample_earthquake_record):
-        result = _process_earthquake_record(sample_earthquake_record)
+        result = process_earthquake_record(sample_earthquake_record)
         assert result is not None
         props = result["properties"]
 
@@ -48,10 +46,10 @@ class TestProcessEarthquakeRecord:
         assert props["population"] == 2575
 
     def test_record_without_geometry_returns_none(self, sample_record_no_geometry):
-        assert _process_earthquake_record(sample_record_no_geometry) is None
+        assert process_earthquake_record(sample_record_no_geometry) is None
 
     def test_original_properties_preserved(self, sample_earthquake_record):
-        result = _process_earthquake_record(sample_earthquake_record)
+        result = process_earthquake_record(sample_earthquake_record)
         props = result["properties"]
         assert props["mag"] == 4.5
         assert props["type"] == "earthquake"

@@ -4,12 +4,11 @@ from calendar import monthrange
 from typing import Dict, Generator, Tuple
 
 import dlt
-import pendulum
-import reverse_geocode as rg
 from api_extract_schema import schema  # type: ignore
 from dlt.destinations import bigquery, filesystem
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
+from transformations import process_earthquake_record
 
 from kestra import Kestra
 
@@ -19,86 +18,6 @@ METHOD = "query"
 BASE_URL = f"{API_URL}/{METHOD}"
 
 logger = Kestra.logger()
-
-
-def _get_location_details(latitude: float, longitude: float) -> Dict[str, str]:
-    """
-    Get location details from coordinates using reverse geocoding.
-
-    Args:
-        latitude: Latitude coordinate
-        longitude: Longitude coordinate
-
-    Returns:
-        Dictionary containing location details (country_code, country, city, population, state)
-    """
-    cords = (latitude, longitude)
-    geo_details = rg.get(cords)
-    results = {
-        "country_code": geo_details.get("country_code", None),
-        "country": geo_details.get("country", None),
-        "city": geo_details.get("city", None),
-        "population": geo_details.get("population", None),
-        "state": geo_details.get("state", None),
-    }
-
-    return results
-
-
-def _convert_timestamp_to_iso(timestamp: int) -> str:
-    """
-    Convert millisecond timestamp to ISO 8601 string.
-
-    Args:
-        timestamp: Unix timestamp in milliseconds
-
-    Returns:
-        ISO 8601 formatted string
-    """
-    return (
-        pendulum.from_timestamp(timestamp / 1000, tz="UTC")
-        .replace(microsecond=0)
-        .to_iso8601_string()
-    )
-
-
-def _process_earthquake_record(record: Dict) -> Dict:
-    """
-    Process and transform earthquake record by converting timestamps and flattening geometry.
-
-    Args:
-        record: Dictionary containing earthquake record data
-
-    Returns:
-        Processed record with transformed timestamps and flattened geometry
-    """
-
-    # Convert timestamps
-    record["properties"]["time"] = _convert_timestamp_to_iso(record["properties"]["time"])
-    record["properties"]["updated"] = _convert_timestamp_to_iso(record["properties"]["updated"])
-
-    # Flatten geometry
-    if "geometry" not in record:
-        return None
-    record["properties"]["g_type"] = record["geometry"]["type"]
-    coordinates = record["geometry"]["coordinates"]
-    longitude = coordinates[0]
-    latitude = coordinates[1]
-    depth = coordinates[2]
-    record["properties"]["g_longitude"] = longitude
-    record["properties"]["g_latitude"] = latitude
-    record["properties"]["g_depth"] = depth
-
-    # Reverse geocode to get location information
-    geo_details = _get_location_details(latitude, longitude)
-    record["properties"]["country_code"] = geo_details["country_code"]
-    record["properties"]["country"] = geo_details["country"]
-    record["properties"]["state"] = geo_details["state"]
-    record["properties"]["city"] = geo_details["city"]
-    record["properties"]["population"] = geo_details["population"]
-
-    del record["geometry"]
-    return record
 
 
 def _generate_date_ranges(year, month) -> Tuple[str, str]:
@@ -152,7 +71,7 @@ def get_api_data_flat(starttime: str, endtime: str) -> Generator[Dict, None, Non
             BASE_URL,
             params=params,
         ):
-            processed = [_process_earthquake_record(record) for record in page]
+            processed = [process_earthquake_record(record) for record in page]
             yield [r for r in processed if r is not None]
     except Exception as e:
         logger.info(f"Error fetching earthquake data: {e}")
