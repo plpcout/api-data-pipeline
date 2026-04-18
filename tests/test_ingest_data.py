@@ -1,9 +1,6 @@
 import pytest
-from ingest_data import (
-    _generate_date_ranges,
-    build_destination_bq_dataset,
-    build_destination_bucket_path,
-)
+from config import build_destination_bq_dataset, build_destination_bucket_path
+from ingest_data import _generate_date_ranges
 from transformations import convert_timestamp_to_iso, process_earthquake_record
 
 

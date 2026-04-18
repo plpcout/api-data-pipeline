@@ -1,21 +1,16 @@
 import argparse
-import os
 from calendar import monthrange
 from typing import Dict, Generator, Tuple
 
 import dlt
 from api_extract_schema import schema  # type: ignore
+from config import BASE_URL, build_destination_bq_dataset, build_destination_bucket_path
 from dlt.destinations import bigquery, filesystem
 from dlt.sources.helpers.rest_client import RESTClient
 from dlt.sources.helpers.rest_client.paginators import OffsetPaginator
 from transformations import process_earthquake_record
 
 from kestra import Kestra
-
-# API constants
-API_URL = "https://earthquake.usgs.gov/fdsnws/event/1"
-METHOD = "query"
-BASE_URL = f"{API_URL}/{METHOD}"
 
 logger = Kestra.logger()
 
@@ -86,41 +81,6 @@ def create_pipeline() -> dlt.Pipeline:
         Configured DLT pipeline
     """
     return dlt.pipeline(pipeline_name="api_extract")
-
-
-def build_destination_bucket_path() -> str:
-    """
-    Build the destination path for storing the data.
-
-    Args:
-        year: Year for which the data is being stored
-
-    Returns:
-        Full path to the destination
-    """
-    bucket_url = os.getenv("DESTINATION__FILESYSTEM__BUCKET_URL")
-    if not bucket_url:
-        raise ValueError("DESTINATION__FILESYSTEM__BUCKET_URL environment variable is not set")
-
-    # return os.path.join(bucket_url, "earthquakes_data", "raw", year, month)
-    return os.path.join(bucket_url, "earthquakes_data", "raw")
-
-
-def build_destination_bq_dataset() -> str:
-    """
-    Build the destination path for storing the data.
-
-    Args:
-        year: Year for which the data is being stored
-
-    Returns:
-        Full path to the destination
-    """
-    dataset_name = os.getenv("DESTINATION__BIGQUERY__DATASET_NAME")
-    if not dataset_name:
-        raise ValueError("DESTINATION__BIGQUERY__DATASET_NAME environment variable is not set")
-
-    return dataset_name
 
 
 def run_pipeline(year, month) -> None:
